@@ -1,0 +1,74 @@
+//
+//    rfnoc-hls-neuralnet: Vivado HLS code for neural-net building blocks
+//
+//    Copyright (C) 2017 EJ Kreinar
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+#include <fstream>
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string>
+#include <vector>
+
+#include "firmware/parameters.h"
+#include "firmware/myproject.h"
+#include "nnet_helpers.h"
+
+
+int main(int argc, char **argv)
+{
+
+  //load input data from text file
+  std::ifstream fin("KERAS_check_best_model_input_features.dat");
+
+  std::string line;
+  int e = 0;
+  if (fin.is_open())
+  {
+	std::ofstream outfile;
+	outfile.open("KERAS_check_best_model_testbench_output.dat");
+	while ( std::getline (fin,line) )
+    {
+	  if( e%5000==0 ) std::cout << "Processing event " << e << std::endl;
+	  e++;
+      char* cstr=const_cast<char*>(line.c_str());
+      char* current;
+      std::vector<float> arr;
+      current=strtok(cstr," ");
+      while(current!=NULL){
+          arr.push_back(atof(current));
+          current=strtok(NULL," ");
+      }
+
+      input_t  data_str[N_INPUTS] = {arr[0],arr[1],arr[2],arr[3],arr[4],arr[5],arr[6],arr[7],arr[8],arr[9],arr[10],arr[11],arr[12],arr[13],arr[14],arr[15]};
+      result_t res_str[N_OUTPUTS] = {0};
+      unsigned short size_in, size_out;
+      myproject(data_str, res_str, size_in, size_out);
+
+      for(int i=0; i<N_OUTPUTS; i++){
+    	outfile << res_str[i] << " ";
+      }
+      outfile << "\n";
+    }
+    fin.close();
+    outfile.close();
+  }
+  else std::cout << "Unable to open file" << std::endl;
+
+  
+  return 0;
+}
