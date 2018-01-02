@@ -19,6 +19,8 @@ import itertools
 import subprocess
 import xml.etree.ElementTree as ET
 
+ToRun = True
+
 #######################################
 ## Config module
 #######################################
@@ -102,15 +104,22 @@ def RunProjs(projs):
     for k, v in projs.items():
         PrepareYaml(k, v)
         pwd = os.getcwd()
-        ymltorun = "%s/%s.yml" % (pwd, k)
-        outlog = open("%s.stdout" % k, 'w')
-        errlog = open("%s.stderr" % k, 'w')
-        subprocess.call("python keras-to-hls.py -c %s"  % ymltorun, cwd=r'../../keras-to-hls/',
-                         stdout = outlog, stderr=errlog, shell=True)
-        subprocess.call("ls", cwd=r'../../keras-to-hls/',
-                         stdout = outlog, stderr=errlog, shell=True)
-        subprocess.call("vivado_hls -f build_prj.tcl" , cwd=r'../../keras-to-hls/%s' % k,
-                         stdout = outlog, stderr=errlog, shell=True)
+        if ToRun:
+            ymltorun = "%s/%s.yml" % (pwd, k)
+            outlog = open("%s.stdout" % k, 'w')
+            errlog = open("%s.stderr" % k, 'w')
+            subprocess.call("python keras-to-hls.py -c %s"  % ymltorun, cwd=r'../../keras-to-hls/',
+                            stdout = outlog, stderr=errlog, shell=True)
+            subprocess.call("ls", cwd=r'../../keras-to-hls/',
+                            stdout = outlog, stderr=errlog, shell=True)
+            subprocess.call("vivado_hls -f build_prj.tcl" , cwd=r'../../keras-to-hls/%s' % k,
+                            stdout = outlog, stderr=errlog, shell=True)
+            ## Remove large temp dir which consume a large disk space
+            autopilot = "%s/../../keras-to-hls/%s/myproject_prj/solution1/.autopilot" % (pwd, k)
+            if os.path.exists(autopilot):
+                subprocess.call("rm -rf %s" % autopilot,
+                            stdout = outlog, stderr=errlog, shell=True)
+
 
         report_filename = "%s/../../keras-to-hls/%s/myproject_prj/solution1/syn/report/myproject_csynth.xml" % (pwd, k)
         ExtractFromXML(df, k,  report_filename)
