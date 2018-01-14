@@ -10,6 +10,8 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
+from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
 from root_numpy import array2root
 import pandas as pd
 # To turn off GPU
@@ -21,6 +23,7 @@ if __name__ == "__main__":
     parser.add_option('-i','--input'   ,action='store',type='string',dest='inputFile'   ,default='data/processed-pythia82-lhc13-all-pt1-50k-r1_h022_e0175_t220_nonu_truth.z', help='input file')
     parser.add_option('-t','--tree'   ,action='store',type='string',dest='tree'   ,default='t_allpar_new', help='tree name')
     parser.add_option('-o','--output'   ,action='store',type='string',dest='outputDir'   ,default='data_to_txt/', help='output directory')
+    parser.add_option('-n','--normalized'   ,action='store_true',dest='normalizedInputs'   ,default=False, help='add this option if inputs are normalized')
     (options,args) = parser.parse_args()
 
     if os.path.isdir(options.outputDir):
@@ -48,27 +51,38 @@ if __name__ == "__main__":
     # Convert to numpy array with correct shape
     features_val = features_df.values
     labels_val = labels_df.values
-    
+
+    X_train_val, X_test, y_train_val, y_test = train_test_split(features_val, labels_val, test_size=0.2, random_state=42)
+    print X_train_val.shape
+    print y_train_val.shape
+    print X_test.shape
+    print y_test.shape
+
+    #Normalize
+    if options.normalizedInputs:
+     scaler = preprocessing.StandardScaler().fit(X_train_val)
+     X_test = scaler.transform(X_test) 
+             
     modelName = options.inputModel.split('/')[1].replace('.h5','')
     
     model = load_model(options.inputModel)
-    predict_test = model.predict(features_val)
+    predict_test = model.predict(X_test)
 
-    print "Writing",labels_val.shape[1],"predicted labels for",labels_val.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_truth_labels.dat')  
+    print "Writing",y_test.shape[1],"predicted labels for",y_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_truth_labels.dat')  
     outf_labels = open(options.outputDir+'/'+modelName+'_truth_labels.dat','w')
-    for e in range(labels_val.shape[0]):
+    for e in range(y_test.shape[0]):
      line=''
-     for l in range(labels_val.shape[1]):
-      line+=(str(labels_val[e][l])+' ')
+     for l in range(y_test.shape[1]):
+      line+=(str(y_test[e][l])+' ')
      outf_labels.write(line+'\n')
     outf_labels.close() 
         
-    print "Writing",features_val.shape[1],"features for",features_val.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_input_features.dat')
+    print "Writing",X_test.shape[1],"features for",X_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_input_features.dat')
     outf_features = open(options.outputDir+'/'+modelName+'_input_features.dat','w')
-    for e in range(features_val.shape[0]):
+    for e in range(X_test.shape[0]):
      line=''
-     for f in range(len(features_val[e])):
-      line+=(str(features_val[e][f])+' ')
+     for f in range(len(X_test[e])):
+      line+=(str(X_test[e][f])+' ')
      outf_features.write(line+'\n')    
     outf_features.close()  
      
