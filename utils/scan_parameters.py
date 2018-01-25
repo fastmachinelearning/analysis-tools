@@ -18,6 +18,7 @@ import collections
 import itertools
 import subprocess
 import xml.etree.ElementTree as ET
+import sys
 
 ToRun = True
 
@@ -97,7 +98,7 @@ def ExtractFromXML(df, key, report_file):
         df.at[key, k] = path.text
 
 
-def RunProjs(projs):
+def RunProjs(projs,hlsdir):
     ##
     df = pandas.DataFrame.from_dict(projs, orient='index')
     # print(df.columns.values)
@@ -108,20 +109,22 @@ def RunProjs(projs):
             ymltorun = "%s/%s.yml" % (pwd, k)
             outlog = open("%s.stdout" % k, 'w')
             errlog = open("%s.stderr" % k, 'w')
-            subprocess.call("python keras-to-hls.py -c %s"  % ymltorun, cwd=r'../../keras-to-hls/',
+            subprocess.call("python keras-to-hls.py -c %s"  % ymltorun, cwd=r'%s/keras-to-hls/'%hlsdir,
                             stdout = outlog, stderr=errlog, shell=True)
-            subprocess.call("ls", cwd=r'../../keras-to-hls/',
-                            stdout = outlog, stderr=errlog, shell=True)
-            subprocess.call("vivado_hls -f build_prj.tcl" , cwd=r'../../keras-to-hls/%s' % k,
+            subprocess.call("ls", cwd=r'%s/keras-to-hls/'%hlsdir,
+                            stdout = outlog, stderr=errlog, shell=True) 
+            subprocess.call('cp -r ../tb_data ../example-hls-test-bench/myproject_test.cpp ../example-hls-test-bench/build_prj.tcl %s/keras-to-hls/%s'%(hlsdir,k),
+                            stdout = outlog, stderr=errlog, shell=True)            
+            subprocess.call("vivado_hls -f build_prj.tcl" , cwd=r'%s/keras-to-hls/%s' %(hlsdir,k),
                             stdout = outlog, stderr=errlog, shell=True)
             ## Remove large temp dir which consume a large disk space
-            autopilot = "%s/../../keras-to-hls/%s/myproject_prj/solution1/.autopilot" % (pwd, k)
+            autopilot = "%s/keras-to-hls/%s/myproject_prj/solution1/.autopilot" % (hlsdir,k)
             if os.path.exists(autopilot):
                 subprocess.call("rm -rf %s" % autopilot,
                             stdout = outlog, stderr=errlog, shell=True)
 
 
-        report_filename = "%s/../../keras-to-hls/%s/myproject_prj/solution1/syn/report/myproject_csynth.xml" % (pwd, k)
+        report_filename = "%s/keras-to-hls/%s/myproject_prj/solution1/syn/report/myproject_csynth.xml" % (hlsdir,k)
         ExtractFromXML(df, k,  report_filename)
     return df
 
@@ -137,6 +140,6 @@ if __name__ == "__main__":
     yamlConfig = parse_config(args.config)
     config = ReadConfig(yamlConfig)
     projs = FormVariation(config)
-    df = RunProjs(projs)
+    df = RunProjs(projs,config['KerasToHLSDir'])
     df.to_csv("output.csv")
 

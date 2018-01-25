@@ -1,2 +1,2 @@
-ProjectDir: my-hls-dir-test/myproject_prj
+ProjectDir: /home/jngadiub/fpga-ml/HLS4ML/keras-to-hls/test_DefaultPrecision12a4_ReuseFactor1/myproject_prj
 TopFunction: myproject

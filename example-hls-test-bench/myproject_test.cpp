@@ -33,14 +33,14 @@ int main(int argc, char **argv)
 {
 
   //load input data from text file
-  std::ifstream fin("KERAS_check_best_model_input_features.dat");
+  std::ifstream fin("tb_data/tb_input_data.dat");
 
   std::string line;
   int e = 0;
   if (fin.is_open())
   {
 	std::ofstream outfile;
-	outfile.open("KERAS_check_best_model_testbench_output.dat");
+	outfile.open("tb_data/tb_output_data.dat");
 	while ( std::getline (fin,line) )
     {
 	  if( e%5000==0 ) std::cout << "Processing event " << e << std::endl;

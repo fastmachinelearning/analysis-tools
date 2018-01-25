@@ -1,5 +1,6 @@
-KerasJson: example-keras-model-files/KERAS_1layer.json
-KerasH5:   example-keras-model-files/KERAS_1layer_weights.h5
+KerasJson: example-keras-model-files/KERAS_check_best_model_normalized.json
+KerasH5:   example-keras-model-files/KERAS_check_best_model_weights_normalized.h5
+KerasToHLSDir: /home/jngadiub/fpga-ml/HLS4ML/
 OutputDir: test
 
 IOType: io_parallel # options: io_serial/io_parallel
@@ -14,11 +15,12 @@ ReuseFactor:
 DefaultPrecision:
     #4a4: ap_fixed< 4,4> 
     #8a4: ap_fixed< 8,4> 
-    12a4: ap_fixed<12,4> 
-    16a4: ap_fixed<16,4> 
-    20a4: ap_fixed<20,4> 
-    24a4: ap_fixed<24,4> 
-    28a4: ap_fixed<28,4> 
-    32a4: ap_fixed<32,4> 
-    36a4: ap_fixed<36,4> 
-    40a4: ap_fixed<40,4> 
+    #12a4: ap_fixed<12,4> 
+    #16a4: ap_fixed<16,4> 
+    #20a4: ap_fixed<20,4> 
+    #24a4: ap_fixed<24,4> 
+    #28a4: ap_fixed<28,4> 
+    #32a4: ap_fixed<32,4> 
+    #36a4: ap_fixed<36,4> 
+    #40a4: ap_fixed<40,4> 
+     18a8: ap_fixed<18,8> 
