@@ -8,6 +8,7 @@
 #
 
 from __future__ import print_function
+from sklearn.metrics import roc_curve, auc
 import pprint
 import pandas
 import json
@@ -18,7 +19,9 @@ import collections
 import itertools
 import subprocess
 import xml.etree.ElementTree as ET
-import sys
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
 
 ToRun = True
 
@@ -88,6 +91,12 @@ def ExtractFromXML(df, key, report_file):
         if k not in df:
             df[k] = None
 
+    ## Check file exits
+    if not os.path.isfile(report_file):
+        for k, v in xmlpath.items():
+            df.at[key, k] = None
+        return False
+	
     ## Parsing XML file
     tree = ET.parse(report_file)
     root = tree.getroot()
@@ -97,7 +106,33 @@ def ExtractFromXML(df, key, report_file):
             path = path.find(i)
         df.at[key, k] = path.text
 
+def ExtractROC(df, key, output_filename):
+    truth_filename = "../data_to_txt_2NN/KERAS_check_best_model_truth_labels.dat"
+    predict_filename = "../data_to_txt_2NN/KERAS_check_best_model_predictions.dat"
 
+    if "AUC" not in df:
+        df["AUC"] = None
+
+    ## Check file exits
+    if not os.path.isfile(output_filename):
+        df.at[key, "AUC"] = None
+        return False
+
+    truth_df = pandas.read_csv(truth_filename, header=None)
+    predict_df = pandas.read_csv(predict_filename, header=None)
+    output_df = pandas.read_csv(output_filename, header=None)
+
+    ## Expected AUC from keras
+    # fpr, tpr, threshold = roc_curve(truth_df,predict_df)
+
+    dfpr, dtpr, dthreshold = roc_curve(truth_df,output_df.iloc[:, 0])
+    dauc = auc(dfpr, dtpr)
+    df.at[key, "AUC"] = dauc
+
+    plt.plot(dtpr,dfpr,label='%s point, auc = %.1f%%'%( key, dauc * 100))
+    plt.savefig("%s.pdf" % key)
+
+    
 def RunProjs(projs,hlsdir):
     ##
     df = pandas.DataFrame.from_dict(projs, orient='index')
@@ -105,7 +140,10 @@ def RunProjs(projs,hlsdir):
     for k, v in projs.items():
         PrepareYaml(k, v)
         pwd = os.getcwd()
-        if ToRun:
+        report_filename = "%s/../../keras-to-hls/%s/myproject_prj/solution1/syn/report/myproject_csynth.xml" % (pwd, k)
+        output_filename = "%s/../../keras-to-hls/%s/myproject_prj/solution1/csim/build/res.dat" % (pwd,k)
+	
+        if ToRun and not os.path.exists(report_filename):
             ymltorun = "%s/%s.yml" % (pwd, k)
             outlog = open("%s.stdout" % k, 'w')
             errlog = open("%s.stderr" % k, 'w')
@@ -113,7 +151,7 @@ def RunProjs(projs,hlsdir):
                             stdout = outlog, stderr=errlog, shell=True)
             subprocess.call("ls", cwd=r'%s/keras-to-hls/'%hlsdir,
                             stdout = outlog, stderr=errlog, shell=True) 
-            subprocess.call('cp ../tb_data/tb_input_data.dat ../example-hls-test-bench/myproject_test.cpp build_prj.tcl %s/keras-to-hls/%s'%(hlsdir,k),
+            subprocess.call('cp -r ../tb_data ../example-hls-test-bench/myproject_test.cpp ../example-hls-test-bench/build_prj.tcl %s/keras-to-hls/%s'%(hlsdir,k),
                             stdout = outlog, stderr=errlog, shell=True)            
             subprocess.call("vivado_hls -f build_prj.tcl" , cwd=r'%s/keras-to-hls/%s' %(hlsdir,k),
                             stdout = outlog, stderr=errlog, shell=True)
@@ -124,8 +162,11 @@ def RunProjs(projs,hlsdir):
                             stdout = outlog, stderr=errlog, shell=True)
 
 
-        report_filename = "%s/keras-to-hls/%s/myproject_prj/solution1/syn/report/myproject_csynth.xml" % (hlsdir,k)
+        # Extract XML file
         ExtractFromXML(df, k,  report_filename)
+        # Extract ROC curve
+        ExtractROC(df, k, output_filename)
+	
     return df
 
 if __name__ == "__main__":
