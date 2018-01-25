@@ -113,7 +113,7 @@ def RunProjs(projs,hlsdir):
                             stdout = outlog, stderr=errlog, shell=True)
             subprocess.call("ls", cwd=r'%s/keras-to-hls/'%hlsdir,
                             stdout = outlog, stderr=errlog, shell=True) 
-            subprocess.call('cp -r ../tb_data ../example-hls-test-bench/myproject_test.cpp ../example-hls-test-bench/build_prj.tcl %s/keras-to-hls/%s'%(hlsdir,k),
+            subprocess.call('cp ../tb_data/tb_input_data.dat ../example-hls-test-bench/myproject_test.cpp build_prj.tcl %s/keras-to-hls/%s'%(hlsdir,k),
                             stdout = outlog, stderr=errlog, shell=True)            
             subprocess.call("vivado_hls -f build_prj.tcl" , cwd=r'%s/keras-to-hls/%s' %(hlsdir,k),
                             stdout = outlog, stderr=errlog, shell=True)

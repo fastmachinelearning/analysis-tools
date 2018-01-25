@@ -12,10 +12,17 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
-from root_numpy import array2root
 import pandas as pd
+import yaml
 # To turn off GPU
 #os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
+## Config module
+def parse_config(config_file) :
+
+    print "Loading configuration from " + str(config_file)
+    config = open(config_file, 'r')
+    return yaml.load(config)
 
 if __name__ == "__main__":
     parser = OptionParser()
@@ -23,8 +30,10 @@ if __name__ == "__main__":
     parser.add_option('-i','--input'   ,action='store',type='string',dest='inputFile'   ,default='data/processed-pythia82-lhc13-all-pt1-50k-r1_h022_e0175_t220_nonu_truth.z', help='input file')
     parser.add_option('-t','--tree'   ,action='store',type='string',dest='tree'   ,default='t_allpar_new', help='tree name')
     parser.add_option('-o','--output'   ,action='store',type='string',dest='outputDir'   ,default='data_to_txt/', help='output directory')
-    parser.add_option('-n','--normalized'   ,action='store_true',dest='normalizedInputs'   ,default=False, help='add this option if inputs are normalized')
+    parser.add_option('-c','--config'   ,action='store',type='string', dest='config', default='train_config_threelayer.yml', help='configuration file')
     (options,args) = parser.parse_args()
+     
+    yamlConfig = parse_config(options.config)
 
     if os.path.isdir(options.outputDir):
         print "Directory exist: do not create"
@@ -37,12 +46,11 @@ if __name__ == "__main__":
     treeArray = h5File[options.tree][()]
     
     # List of features to use
-    features = ['j_zlogz', 'j_c1_b0_mmdt', 'j_c1_b1_mmdt', 'j_c1_b2_mmdt', 'j_c2_b1_mmdt', 'j_c2_b2_mmdt',
-                'j_d2_b1_mmdt', 'j_d2_b2_mmdt', 'j_d2_a1_b1_mmdt', 'j_d2_a1_b2_mmdt', 'j_m2_b1_mmdt',
-                'j_m2_b2_mmdt', 'j_n2_b1_mmdt', 'j_n2_b2_mmdt', 'j_mass_mmdt', 'j_multiplicity']
+    # List of features to use
+    features = yamlConfig['Inputs']
     
     # List of labels to use
-    labels = ['j_g', 'j_q', 'j_w', 'j_z', 'j_t']
+    labels = yamlConfig['Labels']
 
     # Convert to dataframe
     features_df = pd.DataFrame(treeArray,columns=features)
@@ -59,7 +67,7 @@ if __name__ == "__main__":
     print y_test.shape
 
     #Normalize
-    if options.normalizedInputs:
+    if yamlConfig['NormalizeInputs']:
      scaler = preprocessing.StandardScaler().fit(X_train_val)
      X_test = scaler.transform(X_test) 
              
