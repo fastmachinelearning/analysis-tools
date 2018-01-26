@@ -84,7 +84,7 @@ def PassCSim(key):
     if not os.path.isfile(stdout): return False
 
     if 'CSim failed' in open(stdout,'r').read():
-     print "CSim failed with errors for ",key
+     print("CSim failed with errors for ",key)
      return False
 
     return True

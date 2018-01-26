@@ -71,7 +71,7 @@ if __name__ == "__main__":
      scaler = preprocessing.StandardScaler().fit(X_train_val)
      X_test = scaler.transform(X_test) 
              
-    modelName = options.inputModel.split('/')[1].replace('.h5','')
+    modelName = options.inputModel.split('/')[-1].replace('.h5','')
     
     model = load_model(options.inputModel)
     predict_test = model.predict(X_test)
