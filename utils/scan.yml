@@ -2,6 +2,7 @@ KerasJson: example-keras-model-files/KERAS_check_best_model_normalized.json
 KerasH5:   example-keras-model-files/KERAS_check_best_model_weights_normalized.h5
 KerasToHLSDir: my-HLS4ML-dir/
 OutputDir: test
+KerasDataDir: ../data_to_txt/
 
 IOType: io_parallel # options: io_serial/io_parallel
 ReuseFactor: 
