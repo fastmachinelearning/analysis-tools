@@ -190,9 +190,9 @@ def RunProjs(projs,hlsdir,kerasdir):
     for k, v in projs.items():
         PrepareYaml(k, v)
         pwd = os.getcwd()
-        output_filename = '%s/keras-to-hls/results_%s/tb_output_data.dat'%(hlsdir,k) 
-        report_filename = '%s/keras-to-hls/results_%s/myproject_csynth.xml'%(hlsdir,k)
-
+        report_filename = "%s/keras-to-hls/%s/myproject_prj/solution1/syn/report/myproject_csynth.xml" % (hlsdir, k)
+        output_filename = "%s/keras-to-hls/%s/myproject_prj/solution1/csim/build/tb_output_data.dat" % (hlsdir,k)
+        
         if ToRun and not os.path.exists(report_filename):
             ymltorun = "%s/%s.yml" % (pwd, k)
             outlog = open("%s.stdout" % k, 'w')
@@ -217,11 +217,14 @@ def RunProjs(projs,hlsdir,kerasdir):
          
             if os.path.exists(output_filename):
              subprocess.call('cp %s %s/keras-to-hls/results_%s/.'%(output_filename,hlsdir,k),
-                            stdout = outlog, stderr=errlog, shell=True)       
+                            stdout = outlog, stderr=errlog, shell=True) 
+             output_filename = '%s/keras-to-hls/results_%s/tb_output_data.dat'%(hlsdir,k) 	          
               
             if os.path.exists(report_filename):
              subprocess.call('cp %s %s/keras-to-hls/results_%s/.'%(report_filename,hlsdir,k),
                             stdout = outlog, stderr=errlog, shell=True)  
+             report_filename = '%s/keras-to-hls/results_%s/myproject_csynth.xml'%(hlsdir,k)
+
                  
             subprocess.call('rm -rf %s/keras-to-hls/%s'%(hlsdir,k),
                             stdout = outlog, stderr=errlog, shell=True)  
