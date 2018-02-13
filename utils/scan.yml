@@ -1,19 +1,21 @@
 KerasJson: example-keras-model-files/KERAS_1layer.json
 KerasH5:   example-keras-model-files/KERAS_1layer_weights.h5
+KerasToHLSDir: my-HLS4ML-dir/
 OutputDir: test
+KerasDataDir: ../data_to_txt/
 
 IOType: io_parallel # options: io_serial/io_parallel
 ReuseFactor: 
     - 1
-    #- 2
-    #- 3
-    #- 4
-    #- 5
-    #- 6
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
 
 DefaultPrecision:
-    #4a4: ap_fixed< 4,4> 
-    #8a4: ap_fixed< 8,4> 
+    4a4: ap_fixed< 4,4> 
+    8a4: ap_fixed< 8,4> 
     12a4: ap_fixed<12,4> 
     16a4: ap_fixed<16,4> 
     20a4: ap_fixed<20,4> 
