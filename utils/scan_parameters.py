@@ -52,6 +52,10 @@ def FormVariation(Config):
     ## Getting the variables for variation
     var = {}
     for k, v in Config.items():
+        ## Use ScanXXX as the config variation for the scan. 
+        ## Skip in the config
+        if "Scan" == k[:4]:
+            continue
         if isinstance(v, dict):
             var[k] = v
 
@@ -78,11 +82,10 @@ def PrepareYaml(name, proj):
     with open("%s.yml" % name, 'w') as file:
         yaml.dump(proj, file, default_flow_style=False)
 
-def ConfigureTestBench(mydir):
-
+def ConfigureTestBench(inputdata):
     fout = open('tmp.cpp','w')
     for line in open('../example-hls-test-bench/myproject_test.cpp','r').readlines():
-     fout.write(line.replace('tb_input_data.dat', '%s/../tb_data/tb_input_data.dat'%mydir))
+        fout.write(line.replace('tb_input_data.dat', inputdata))
     fout.close()
     os.system('mv tmp.cpp myproject_test.cpp')
 
@@ -121,7 +124,7 @@ def ExtractFromXML(df, key, report_file):
         for k, v in xmlpath.items():
             df.at[key, k] = None
         return False
-	
+
     ## Parsing XML file
     tree = ET.parse(report_file)
     root = tree.getroot()
@@ -182,23 +185,28 @@ def ExtractROC(df, key, output_filename,keras_dir):
 
      plt.savefig("ROC%i_%s.pdf" % (i,key))
 
-    
-def RunProjs(projs,hlsdir,kerasdir):
+
+def RunProjs(projs, config):
+    hlsdir = config["ScanHLS4MLDir"]
+    kerasdir = config["ScanDataDir"]
+
     ##
     df = pandas.DataFrame.from_dict(projs, orient='index')
     # print(df.columns.values)
     for k, v in projs.items():
         PrepareYaml(k, v)
         pwd = os.getcwd()
-        report_filename = "%s/keras-to-hls/%s/myproject_prj/solution1/syn/report/myproject_csynth.xml" % (hlsdir, k)
-        output_filename = "%s/keras-to-hls/%s/myproject_prj/solution1/csim/build/tb_output_data.dat" % (hlsdir,k)
-        
+        report_filename = "%s/keras-to-hls/%s/%s_prj/solution1/syn/report/myproject_csynth.xml" %\
+                (hlsdir, k, config["ProjectName"])
+        output_filename = "%s/keras-to-hls/%s/%s_prj/solution1/csim/build/tb_output_data.dat" % \
+                (hlsdir,k, config["ProjectName"])
+
         if ToRun and not os.path.exists(report_filename):
             ymltorun = "%s/%s.yml" % (pwd, k)
             outlog = open("%s.stdout" % k, 'w')
             errlog = open("%s.stderr" % k, 'w')
 
-            ConfigureTestBench(pwd)
+            ConfigureTestBench(os.path.abspath(config["ScanInputData"]))
 
             subprocess.call("python keras-to-hls.py -c %s"  % ymltorun, cwd=r'%s/keras-to-hls/'%hlsdir,
                             stdout = outlog, stderr=errlog, shell=True)
@@ -214,18 +222,18 @@ def RunProjs(projs,hlsdir,kerasdir):
 
             subprocess.call('mkdir %s/keras-to-hls/results_%s'%(hlsdir,k),
                             stdout = outlog, stderr=errlog, shell=True)      
-         
-            if os.path.exists(output_filename):
-             subprocess.call('cp %s %s/keras-to-hls/results_%s/.'%(output_filename,hlsdir,k),
-                            stdout = outlog, stderr=errlog, shell=True) 
-             output_filename = '%s/keras-to-hls/results_%s/tb_output_data.dat'%(hlsdir,k) 	          
-              
-            if os.path.exists(report_filename):
-             subprocess.call('cp %s %s/keras-to-hls/results_%s/.'%(report_filename,hlsdir,k),
-                            stdout = outlog, stderr=errlog, shell=True)  
-             report_filename = '%s/keras-to-hls/results_%s/myproject_csynth.xml'%(hlsdir,k)
 
-                 
+            if os.path.exists(output_filename):
+                subprocess.call('cp %s %s/keras-to-hls/results_%s/.'%(output_filename,hlsdir,k),
+                                stdout = outlog, stderr=errlog, shell=True) 
+             output_filename = '%s/keras-to-hls/results_%s/tb_output_data.dat'%(hlsdir,k)           
+
+            if os.path.exists(report_filename):
+                subprocess.call('cp %s %s/keras-to-hls/results_%s/.'%(report_filename,hlsdir,k),
+                                stdout = outlog, stderr=errlog, shell=True)  
+                report_filename = '%s/keras-to-hls/results_%s/myproject_csynth.xml'%(hlsdir,k)
+
+
             subprocess.call('rm -rf %s/keras-to-hls/%s'%(hlsdir,k),
                             stdout = outlog, stderr=errlog, shell=True)  
 
@@ -234,7 +242,7 @@ def RunProjs(projs,hlsdir,kerasdir):
         ExtractFromXML(df, k,  report_filename)
         # Extract ROC curve
         ExtractROC(df, k, output_filename,kerasdir)
-	
+
     return df
 
 if __name__ == "__main__":
@@ -249,6 +257,5 @@ if __name__ == "__main__":
     yamlConfig = parse_config(args.config)
     config = ReadConfig(yamlConfig)
     projs = FormVariation(config)
-    df = RunProjs(projs,config['KerasToHLSDir'],config['KerasDataDir'])
-    df.to_csv("output.csv")
-
+    df = RunProjs(projs, config)
+    df.to_csv("output_%s.csv" % config["ProjectName"])
