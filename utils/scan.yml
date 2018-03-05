@@ -14,8 +14,8 @@ ReuseFactor:
     - 6
 
 DefaultPrecision:
-    4a4: ap_fixed< 4,4> 
-    8a4: ap_fixed< 8,4> 
+    4a4: ap_fixed<4,4> 
+    8a4: ap_fixed<8,4> 
     12a4: ap_fixed<12,4> 
     16a4: ap_fixed<16,4> 
     20a4: ap_fixed<20,4> 

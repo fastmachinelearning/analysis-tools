@@ -8,7 +8,6 @@ set_top myproject
 add_files firmware/myproject.cpp -cflags "-I[file normalize ../../nnet_utils]"
 add_files -tb myproject_test.cpp -cflags "-I[file normalize ../../nnet_utils]"
 add_files -tb firmware/weights
-add_files -tb tb_input_data.dat
 open_solution -reset "solution1"
 set_part {xc7vx690tffg1927-2}
 #set_part {xcvu9p-flgb2104-2-i}
