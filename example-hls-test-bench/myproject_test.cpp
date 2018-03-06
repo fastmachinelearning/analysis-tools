@@ -59,8 +59,10 @@ int main(int argc, char **argv)
         }
         assert(arr.size() == N_INPUTS);
 
-        input_t  data_str[N_INPUTS] = arr;
+        input_t  data_str[N_INPUTS] = {0};
         result_t res_str[N_OUTPUTS] = {0};
+        for(int i=0; i<N_INPUTS; i++)
+          data_str[i] = arr.at(i);
         unsigned short size_in, size_out;
         myproject(data_str, res_str, size_in, size_out);
 

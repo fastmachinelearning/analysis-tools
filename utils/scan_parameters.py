@@ -34,6 +34,7 @@ xmlpath = {
     "FF" : ["AreaEstimates", "Resources", "FF"],
     "LUT" : ["AreaEstimates", "Resources", "LUT"],
 }
+prediction = None
 
 #######################################
 ## Config module
@@ -136,7 +137,8 @@ def ExtractFromXML(df, key, report_file):
             path = path.find(i)
         df.at[key, k] = path.text
 
-def ExtractROC(prediction, df, key, output_filename, config):
+def ExtractROC(df, key, output_filename, config):
+    global prediction
     truth_filename = os.path.abspath(config["ScanTruth"])
     predict_filename = os.path.abspath(config["ScanPrediction"])
 
@@ -186,11 +188,8 @@ def ExtractROC(prediction, df, key, output_filename, config):
 
 def RunProjs(projs, config):
     hlsdir = config["ScanHLS4MLDir"]
-    kerasdir = config["ScanDataDir"]
-
     ##
     df = pandas.DataFrame.from_dict(projs, orient='index')
-    prediction = None
     for k, v in projs.items():
         PrepareYaml(k, v)
         pwd = os.getcwd()
@@ -200,12 +199,14 @@ def RunProjs(projs, config):
                 (hlsdir,k, config["ProjectName"])
 
         if ToRun and not os.path.exists(report_filename):
-            ymltorun = "%s/%s.yml" % (pwd, k)
+            ymltorun = "%s.yml" % k
             outlog = open("%s.stdout" % k, 'w')
             errlog = open("%s.stderr" % k, 'w')
 
             ConfigureTestBench(os.path.abspath(config["ScanInputData"]))
 
+            subprocess.call("cp %s.yml %s/keras-to-hls/" % (k, hlsdir),
+                            stdout = outlog, stderr=errlog, shell=True)
             subprocess.call("python keras-to-hls.py -c %s"  % ymltorun, cwd=r'%s/keras-to-hls/'%hlsdir,
                             stdout = outlog, stderr=errlog, shell=True)
             subprocess.call('cp myproject_test.cpp build_prj.tcl %s/keras-to-hls/%s'%(hlsdir,k),
@@ -244,9 +245,9 @@ def RunProjs(projs, config):
         # Extract XML file
         ExtractFromXML(df, k,  report_filename)
         # Extract ROC curve
-        ExtractROC(prediction, df, k, output_filename,config)
+        ExtractROC(df, k, output_filename,config)
 
-    return df, prediction
+    return df
 
 if __name__ == "__main__":
     # Parse command line arguments
@@ -255,11 +256,12 @@ if __name__ == "__main__":
                         default = './scan.yml',
                         help="Configuration file.")
     args = parser.parse_args()
-    if not args.config: parser.error('A configuration file needs to be specified.')
+    if not args.config: 
+      parser.error('A configuration file needs to be specified.')
 
     yamlConfig = parse_config(args.config)
     config = ReadConfig(yamlConfig)
     projs = FormVariation(config)
-    df, predict = RunProjs(projs, config)
-    df.to_csv("output_%s.csv" % config["ProjectName"])
-    predict.to_pickle("predict_%s.pkl" % config["ProjectName"])
+    df = RunProjs(projs, config)
+    df.to_csv("output_%s.csv" % config["OutputDir"])
+    prediction.to_pickle("predict_%s.pkl" % config["OutputDir"])
