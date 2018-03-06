@@ -31,3 +31,5 @@ DefaultPrecision:
 ScanHLS4MLDir: my-HLS4ML-dir/
 ScanDataDir: ../data_to_txt/
 ScanInputData: ../3Layer_Full/full_models_input_features.dat
+ScanTruth: ../3Layer_Full/full_models_truth_labels.dat
+ScanPrediction: ../3Layer_Full/full_models_predictions.dat

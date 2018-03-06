@@ -24,7 +24,16 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
-ToRun = True
+ToRun = False
+CleanUp = False
+xmlpath = {
+    "DSP48E" : ["AreaEstimates", "Resources", "DSP48E"],
+    "Timing" : ["PerformanceEstimates", "SummaryOfTimingAnalysis", "EstimatedClockPeriod"],
+    "Latency" : ["PerformanceEstimates", "SummaryOfOverallLatency", "Average-caseLatency"],
+    "Interval" : ["PerformanceEstimates", "SummaryOfOverallLatency", "Interval-min"],
+    "FF" : ["AreaEstimates", "Resources", "FF"],
+    "LUT" : ["AreaEstimates", "Resources", "LUT"],
+}
 
 #######################################
 ## Config module
@@ -105,14 +114,7 @@ def PassCSim(key):
     return True
 
 def ExtractFromXML(df, key, report_file):
-    xmlpath = {
-        "DSP48E" : ["AreaEstimates", "Resources", "DSP48E"],
-        "Timing" : ["PerformanceEstimates", "SummaryOfTimingAnalysis", "EstimatedClockPeriod"],
-        "Latency" : ["PerformanceEstimates", "SummaryOfOverallLatency", "Average-caseLatency"],
-        "Interval" : ["PerformanceEstimates", "SummaryOfOverallLatency", "Interval-min"],
-        "FF" : ["AreaEstimates", "Resources", "FF"],
-        "LUT" : ["AreaEstimates", "Resources", "LUT"],
-    }
+    global xmlpath
     ## Add column to df
     for k in xmlpath:
         if k not in df:
@@ -134,56 +136,52 @@ def ExtractFromXML(df, key, report_file):
             path = path.find(i)
         df.at[key, k] = path.text
 
-def ExtractROC(df, key, output_filename,keras_dir):
-    truth_filename = "%s/KERAS_check_best_model_truth_labels.dat"%(keras_dir)
-    predict_filename = "%s/KERAS_check_best_model_predictions.dat"%(keras_dir)
+def ExtractROC(prediction, df, key, output_filename, config):
+    truth_filename = os.path.abspath(config["ScanTruth"])
+    predict_filename = os.path.abspath(config["ScanPrediction"])
 
     truth_df = np.loadtxt(truth_filename)
-    Noutputs = truth_df.shape[1]
-
-    for i in range(Noutputs):
-
-     if "AUC%i"%(i) not in df:
-        df["AUC%i"%i] = None
-
-     if "ExpAUC%i"%i not in df:
-        df["ExpAUC%i"%i] = None
-
-     ## Check file exits
-     if not os.path.isfile(output_filename):
-        df.at[key, "AUC%i"%i] = None
-        df.at[key, "ExpAUC%i"%i] = None
-        continue
-
-     ## Check csim passed w/o errors
-     if not PassCSim(key):
-        df.at[key, "AUC%i"%i] = None
-        df.at[key, "ExpAUC%i"%i] = None
-        continue
-
     predict_df = np.loadtxt(predict_filename)
     output_df = np.loadtxt(output_filename)
-    predict_df = predict_df[:output_df.shape[0],:]
-    truth_df = truth_df[:output_df.shape[0],:]
-    print(truth_df.shape)
-    print(predict_df.shape)
-    print(output_df.shape)
+    Noutputs = truth_df.shape[1]
+
+    if prediction is None:
+        temp_truth = pandas.DataFrame(truth_df,
+            columns = ["truth_%d" % x for x in range(Noutputs)])
+        temp_predict = pandas.DataFrame(predict_df,
+            columns = ["predict_%d" % x for x in range(Noutputs)])
+        prediction = temp_truth.join(temp_predict)
+
+    temp_output = pandas.DataFrame(output_df,
+        columns = ["%s_%d" % (key, x) for x in range(Noutputs)])
+    prediction = prediction.join(temp_output)
 
     for i in range(Noutputs):
+        if "AUC%i"%(i) not in df:
+            df["AUC%i"%i] = None
+        if "ExpAUC%i"%i not in df:
+            df["ExpAUC%i"%i] = None
+        ## Check file exits
+        if not os.path.isfile(output_filename):
+            df.at[key, "AUC%i"%i] = None
+            df.at[key, "ExpAUC%i"%i] = None
+            continue
+         ## Check csim passed w/o errors
+        if not PassCSim(key):
+            df.at[key, "AUC%i"%i] = None
+            df.at[key, "ExpAUC%i"%i] = None
+            continue
 
-     ## Expected AUC from keras
-     efpr, etpr, ethreshold = roc_curve(truth_df[:,i],predict_df[:,i])
-     eauc = auc(efpr, etpr)
-     df.at[key, "ExpAUC%i"%i] = eauc
-     plt.plot(etpr,efpr,label='%s point, auc = %.1f%%'%( key, eauc * 100))
+    for i in range(Noutputs):
+        ## Expected AUC from keras
+        efpr, etpr, ethreshold = roc_curve(truth_df[:,i],predict_df[:,i])
+        eauc = auc(efpr, etpr)
+        df.at[key, "ExpAUC%i"%i] = eauc
+        ## Expected AUC from HLS
+        dfpr, dtpr, dthreshold = roc_curve(truth_df[:,i],output_df[:,i])
+        dauc = auc(dfpr, dtpr)
+        df.at[key, "AUC%i"%i] = dauc
 
-     ## Expected AUC from HLS
-     dfpr, dtpr, dthreshold = roc_curve(truth_df[:,i],output_df[:,i])
-     dauc = auc(dfpr, dtpr)
-     df.at[key, "AUC%i"%i] = dauc
-     plt.plot(dtpr,dfpr,label='%s point, auc = %.1f%%'%( key, dauc * 100))
-
-     plt.savefig("ROC%i_%s.pdf" % (i,key))
 
 
 def RunProjs(projs, config):
@@ -192,7 +190,7 @@ def RunProjs(projs, config):
 
     ##
     df = pandas.DataFrame.from_dict(projs, orient='index')
-    # print(df.columns.values)
+    prediction = None
     for k, v in projs.items():
         PrepareYaml(k, v)
         pwd = os.getcwd()
@@ -211,39 +209,44 @@ def RunProjs(projs, config):
             subprocess.call("python keras-to-hls.py -c %s"  % ymltorun, cwd=r'%s/keras-to-hls/'%hlsdir,
                             stdout = outlog, stderr=errlog, shell=True)
             subprocess.call('cp myproject_test.cpp build_prj.tcl %s/keras-to-hls/%s'%(hlsdir,k),
-                            stdout = outlog, stderr=errlog, shell=True)           
+                            stdout = outlog, stderr=errlog, shell=True)
             subprocess.call("vivado_hls -f build_prj.tcl" , cwd=r'%s/keras-to-hls/%s' %(hlsdir,k),
                             stdout = outlog, stderr=errlog, shell=True)
-            ## Remove large temp dir which consume a large disk space
-            autopilot = "%s/keras-to-hls/%s/myproject_prj/solution1/.autopilot" % (hlsdir,k)
-            if os.path.exists(autopilot):
-                subprocess.call("rm -rf %s" % autopilot,
-                            stdout = outlog, stderr=errlog, shell=True)
 
-            subprocess.call('mkdir %s/keras-to-hls/results_%s'%(hlsdir,k),
-                            stdout = outlog, stderr=errlog, shell=True)      
+#============================================================================#
+#-----------------------------     Clean Up     -----------------------------#
+#============================================================================#
+            if CleanUp:
+                ## Remove large temp dir which consume a large disk space
+                autopilot = "%s/keras-to-hls/%s/myproject_prj/solution1/.autopilot" % (hlsdir,k)
+                if os.path.exists(autopilot):
+                    subprocess.call("rm -rf %s" % autopilot,
+                                stdout = outlog, stderr=errlog, shell=True)
 
-            if os.path.exists(output_filename):
-                subprocess.call('cp %s %s/keras-to-hls/results_%s/.'%(output_filename,hlsdir,k),
-                                stdout = outlog, stderr=errlog, shell=True) 
-             output_filename = '%s/keras-to-hls/results_%s/tb_output_data.dat'%(hlsdir,k)           
+                subprocess.call('mkdir %s/keras-to-hls/results_%s'%(hlsdir,k),
+                                stdout = outlog, stderr=errlog, shell=True)
 
-            if os.path.exists(report_filename):
-                subprocess.call('cp %s %s/keras-to-hls/results_%s/.'%(report_filename,hlsdir,k),
-                                stdout = outlog, stderr=errlog, shell=True)  
-                report_filename = '%s/keras-to-hls/results_%s/myproject_csynth.xml'%(hlsdir,k)
+                if os.path.exists(output_filename):
+                    subprocess.call('cp %s %s/keras-to-hls/results_%s/.'%(output_filename,hlsdir,k),
+                                    stdout = outlog, stderr=errlog, shell=True)
+                    output_filename = '%s/keras-to-hls/results_%s/tb_output_data.dat'%(hlsdir,k)
+
+                if os.path.exists(report_filename):
+                    subprocess.call('cp %s %s/keras-to-hls/results_%s/.'%(report_filename,hlsdir,k),
+                                    stdout = outlog, stderr=errlog, shell=True)
+                    report_filename = '%s/keras-to-hls/results_%s/myproject_csynth.xml'%(hlsdir,k)
 
 
-            subprocess.call('rm -rf %s/keras-to-hls/%s'%(hlsdir,k),
-                            stdout = outlog, stderr=errlog, shell=True)  
+                subprocess.call('rm -rf %s/keras-to-hls/%s'%(hlsdir,k),
+                                stdout = outlog, stderr=errlog, shell=True)
 
 
         # Extract XML file
         ExtractFromXML(df, k,  report_filename)
         # Extract ROC curve
-        ExtractROC(df, k, output_filename,kerasdir)
+        ExtractROC(prediction, df, k, output_filename,config)
 
-    return df
+    return df, prediction
 
 if __name__ == "__main__":
     # Parse command line arguments
@@ -257,5 +260,6 @@ if __name__ == "__main__":
     yamlConfig = parse_config(args.config)
     config = ReadConfig(yamlConfig)
     projs = FormVariation(config)
-    df = RunProjs(projs, config)
+    df, predict = RunProjs(projs, config)
     df.to_csv("output_%s.csv" % config["ProjectName"])
+    predict.to_pickle("predict_%s.pkl" % config["ProjectName"])
