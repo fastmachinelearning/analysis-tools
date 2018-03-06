@@ -1,0 +1,44 @@
+KerasJson: example-keras-model-files/KERAS_3layer.json
+KerasH5: example-keras-model-files/KERAS_3layer_weights.h5
+OutputDir: 3LayerFull
+ProjectName: myproject
+IOType: io_parallel
+ClockPeriod: 5
+XilinxPart: 
+  - xc7vx690tffg1927-2
+  - xcku115-flvf1924-2-i
+
+ReuseFactor: 
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+
+DefaultPrecision: 
+  4a4: ap_fixed<4,4>
+  6a4: ap_fixed<6,4>
+  8a4: ap_fixed<8,4>
+  10a4: ap_fixed<10,4>
+  12a4: ap_fixed<12,4>
+  14a4: ap_fixed<14,4>
+  16a4: ap_fixed<16,4>
+  18a4: ap_fixed<18,4>
+  20a4: ap_fixed<20,4>
+  22a4: ap_fixed<22,4>
+  24a4: ap_fixed<24,4>
+  26a4: ap_fixed<26,4>
+  28a4: ap_fixed<28,4>
+  30a4: ap_fixed<30,4>
+  32a4: ap_fixed<32,4>
+  34a4: ap_fixed<34,4>
+  36a4: ap_fixed<36,4>
+  38a4: ap_fixed<38,4>
+  40a4: ap_fixed<40,4>
+  42a4: ap_fixed<42,4>
+
+ScanHLS4MLDir: ../../
+ScanInputData: ../3Layer_Full/full_models_input_features.dat
+ScanPrediction: ../3Layer_Full/full_models_predictions.dat
+ScanTruth: ../3Layer_Full/full_models_truth_labels.dat

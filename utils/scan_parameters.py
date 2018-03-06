@@ -24,7 +24,7 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
-ToRun = False
+ToRun = True
 CleanUp = False
 xmlpath = {
     "DSP48E" : ["AreaEstimates", "Resources", "DSP48E"],
@@ -145,7 +145,9 @@ def ExtractROC(df, key, output_filename, config):
     truth_df = np.loadtxt(truth_filename)
     predict_df = np.loadtxt(predict_filename)
     output_df = np.loadtxt(output_filename)
-    Noutputs = truth_df.shape[1]
+    Noutputs = 1
+    if truth_df.ndim > 1:
+      Noutputs = truth_df.shape[1]
 
     if prediction is None:
         temp_truth = pandas.DataFrame(truth_df,
@@ -176,11 +178,17 @@ def ExtractROC(df, key, output_filename, config):
 
     for i in range(Noutputs):
         ## Expected AUC from keras
-        efpr, etpr, ethreshold = roc_curve(truth_df[:,i],predict_df[:,i])
+        if Noutputs > 1:
+          efpr, etpr, ethreshold = roc_curve(truth_df[:,i],predict_df[:,i])
+        else:
+          efpr, etpr, ethreshold = roc_curve(truth_df[:],predict_df[:])
         eauc = auc(efpr, etpr)
         df.at[key, "ExpAUC%i"%i] = eauc
         ## Expected AUC from HLS
-        dfpr, dtpr, dthreshold = roc_curve(truth_df[:,i],output_df[:,i])
+        if Noutputs>1:
+          dfpr, dtpr, dthreshold = roc_curve(truth_df[:,i],output_df[:,i])
+        else:
+          dfpr, dtpr, dthreshold = roc_curve(truth_df[:],output_df[:])
         dauc = auc(dfpr, dtpr)
         df.at[key, "AUC%i"%i] = dauc
 
@@ -199,6 +207,7 @@ def RunProjs(projs, config):
                 (hlsdir,k, config["ProjectName"])
 
         if ToRun and not os.path.exists(report_filename):
+            print("Running %s" % k)
             ymltorun = "%s.yml" % k
             outlog = open("%s.stdout" % k, 'w')
             errlog = open("%s.stderr" % k, 'w')
