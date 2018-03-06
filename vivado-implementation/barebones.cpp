@@ -171,12 +171,6 @@ signal INPUT_SIG : std_logic_vector(%d downto 0);\n\
 signal EXTRA_OUTPUT_SIG : std_logic_vector(%d downto 0);\n\
 signal OUTPUT_SIG : std_logic_vector(%d downto 0);\n\
 \n\
-signal EXTRA_INPUT_SIG2 : std_logic_vector(%d downto 0);\n\
-signal INPUT_SIG2 : std_logic_vector(%d downto 0);\n\
-\n\
-signal EXTRA_INPUT_SIG3 : std_logic_vector(%d downto 0);\n\
-signal INPUT_SIG3 : std_logic_vector(%d downto 0);\n\
-\n\
 \n\
 begin \n\
 \n\
@@ -211,13 +205,6 @@ res_V => OUTPUT_SIG(%d downto 0) \n\
   fprintf(fp,"extraInGen : for i in 1 to %d generate\n\
 begin\n\
 IOBUF : IBUF port map (I=>EXTRA_INPUT_PADS(i), O=>EXTRA_INPUT_SIG(i));\n\
-process(clk)\n\
-begin\n\
-    if rising_edge(clk) then\n\
-        EXTRA_INPUT_SIG2(i) <= EXTRA_INPUT_SIG3(i);\n\
-        EXTRA_INPUT_SIG(i) <= EXTRA_INPUT_SIG2(i);\n\
-    end if;\n\
- end process;\n\
 end generate;\n\
 \n\
 ",
@@ -226,17 +213,11 @@ end generate;\n\
   fprintf(fp,"inGen : for i in 0 to %d generate\n\
 begin\n\
 IOBUF : IBUF port map (I=>INPUT_PADS(i), O=>INPUT_SIG(i));\n\
-process(clk)\n\
-begin\n\
-    if rising_edge(clk) then\n\
-        INPUT_SIG2(i) <= INPUT_SIG3(i);\n\
-        INPUT_SIG(i) <= INPUT_SIG2(i);\n\
-    end if;\n\
- end process;\n\
 end generate;\n\
 \n\
 ",
 	  inputCnt*bitSize-1);
+
   fprintf(fp,"extraOutGen : for i in 0 to %d generate\n\
 begin\n\
 IOBUF : OBUF port map (I=>EXTRA_OUTPUT_SIG(i), O=>EXTRA_OUTPUT_PADS(i));\n\
@@ -244,6 +225,7 @@ end generate;\n\
 \n\
 ",
 	  extraOutCnt-1);
+
   fprintf(fp,"outGen : for i in 0 to %d generate\n\
 begin\n\
 IOBUF : OBUF port map (I=>OUTPUT_SIG(i), O=>OUTPUT_PADS(i));\n\
@@ -252,7 +234,6 @@ end generate;\n\
 ",
 	  outputCnt*bitSize-1);
  
-
   fprintf(fp,"	\
 \n\
 IBUF_CLK : IBUFG    port map (I=>EXTRA_INPUT_PADS(0), O=>clk);\n\
