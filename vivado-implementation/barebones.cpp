@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
   
   cout << "package file = " << pkg << endl;
   
-  FILE *fp = fopen(("../usaall/" + pkg).c_str(),"r");
+  FILE *fp = fopen(("usaall/" + pkg).c_str(),"r");
   if(!fp)
     {
       cout << "Invalid file path " << endl;
