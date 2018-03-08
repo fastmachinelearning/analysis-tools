@@ -92,12 +92,11 @@ def PrepareYaml(name, proj):
     with open("%s.yml" % name, 'w') as file:
         yaml.dump(proj, file, default_flow_style=False)
 
-def ConfigureTestBench(inputdata):
-    fout = open('tmp.cpp','w')
+def ConfigureTestBench(inputdata, outfile):
+    fout = open("%s/myproject_test.cpp" % outfile,'w')
     for line in open('../example-hls-test-bench/myproject_test.cpp','r').readlines():
         fout.write(line.replace('tb_input_data.dat', inputdata))
     fout.close()
-    os.system('mv tmp.cpp myproject_test.cpp')
 
 def PassCSim(key):
 
@@ -212,16 +211,21 @@ def RunProjs(projs, config):
             outlog = open("%s.stdout" % k, 'w')
             errlog = open("%s.stderr" % k, 'w')
 
-            ConfigureTestBench(os.path.abspath(config["ScanInputData"]))
 
             subprocess.call("cp %s.yml %s/keras-to-hls/" % (k, hlsdir),
                             stdout = outlog, stderr=errlog, shell=True)
             subprocess.call("python keras-to-hls.py -c %s"  % ymltorun, cwd=r'%s/keras-to-hls/'%hlsdir,
                             stdout = outlog, stderr=errlog, shell=True)
-            subprocess.call('cp myproject_test.cpp build_prj.tcl %s/keras-to-hls/%s'%(hlsdir,k),
+            ## Change myproject_test.cpp with new input data
+            ConfigureTestBench(os.path.abspath(config["ScanInputData"]),  '%s/keras-to-hls/%s'%(hlsdir,k))
+            ## Shouldn't do this. The build_prj also config from yml file
+            # subprocess.call('cp build_prj.tcl %s/keras-to-hls/%s'%(hlsdir,k),
+                            # stdout = outlog, stderr=errlog, shell=True)
+            ret = subprocess.call("vivado_hls -f build_prj.tcl" , cwd=r'%s/keras-to-hls/%s' %(hlsdir,k),
                             stdout = outlog, stderr=errlog, shell=True)
-            subprocess.call("vivado_hls -f build_prj.tcl" , cwd=r'%s/keras-to-hls/%s' %(hlsdir,k),
-                            stdout = outlog, stderr=errlog, shell=True)
+            if ret != 0:
+              print("Something got fucked?!")
+              continue
 
 #============================================================================#
 #-----------------------------     Clean Up     -----------------------------#
