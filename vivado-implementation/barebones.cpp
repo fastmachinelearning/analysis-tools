@@ -105,6 +105,7 @@ int main(int argc, char* argv[])
 
   fprintf(fp,"set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets IBUF_CLK/O]\n");
   fprintf(fp,"set_max_delay 5000.00 -to [get_cells * -hierarchical -filter {IS_PRIMITIVE == true && (NAME =~ *INPUT_SIG*)}]\n");
+  fprintf(fp,"set_max_delay 5000.00 -to [get_cells * -hierarchical -filter {IS_PRIMITIVE == true && (NAME =~ *OUTPUT_SIG*)}]\n");
 
   fprintf(fp,"create_clock -name clk -period 7 -waveform {0 3.0} [get_ports EXTRA_INPUT_PADS[0]]\n\n\n");
 
@@ -132,6 +133,9 @@ int main(int argc, char* argv[])
 	      pins[pinCnt].c_str(),i);
       fprintf(fp,"set_property IOSTANDARD LVCMOS18 [get_ports OUTPUT_PADS[%d]]\n", i);
     }
+  fprintf(fp,"\n#create_pblock algo\n");
+  fprintf(fp,"#add_cells_to_pblock [get_pblocks algo] [get_cells -quiet [list algo]]\n");
+  fprintf(fp,"#resize_pblock [get_pblocks algo] -add SLICE_X20Y20:SLICE_X90Y180\n");
   fclose(fp);
 
 
@@ -177,6 +181,12 @@ signal INPUT_SIG2 : std_logic_vector(%d downto 0);\n\
 signal EXTRA_INPUT_SIG3 : std_logic_vector(%d downto 0);\n\
 signal INPUT_SIG3 : std_logic_vector(%d downto 0);\n\
 \n\
+signal EXTRA_OUTPUT_SIG2 : std_logic_vector(%d downto 0);\n\
+signal OUTPUT_SIG2 : std_logic_vector(%d downto 0);\n\
+\n\
+signal EXTRA_OUTPUT_SIG3 : std_logic_vector(%d downto 0);\n\
+signal OUTPUT_SIG3 : std_logic_vector(%d downto 0);\n\
+\n\
 \n\
 begin \n\
 \n\
@@ -208,6 +218,8 @@ res_V => OUTPUT_SIG(%d downto 0) \n\
 	  //	  inputCnt*bitSize-1, outputCnt*bitSize-1,
 	  extraInCnt-1,inputCnt*bitSize-1, 
 	  extraInCnt-1,inputCnt*bitSize-1, 
+	  extraOutCnt-1,outputCnt*bitSize-1,
+	  extraOutCnt-1,outputCnt*bitSize-1,
 	  inputCnt*bitSize-1, outputCnt*bitSize-1
 	  );
   
@@ -242,14 +254,28 @@ end generate;\n\
 	  inputCnt*bitSize-1);
   fprintf(fp,"extraOutGen : for i in 0 to %d generate\n\
 begin\n\
-IOBUF : OBUF port map (I=>EXTRA_OUTPUT_SIG(i), O=>EXTRA_OUTPUT_PADS(i));\n\
+IOBUF : OBUF port map (I=>EXTRA_OUTPUT_SIG3(i), O=>EXTRA_OUTPUT_PADS(i));\n\
+process(clk)\n\
+begin\n\
+if rising_edge(clk) then\n\
+        EXTRA_OUTPUT_SIG3(i) <= EXTRA_OUTPUT_SIG2(i);\n\
+        EXTRA_OUTPUT_SIG2(i) <= EXTRA_OUTPUT_SIG(i);\n\
+    end if;\n\
+ end process;\n\
 end generate;\n\
 \n\
 ",
 	  extraOutCnt-1);
   fprintf(fp,"outGen : for i in 0 to %d generate\n\
 begin\n\
-IOBUF : OBUF port map (I=>OUTPUT_SIG(i), O=>OUTPUT_PADS(i));\n\
+IOBUF : OBUF port map (I=>OUTPUT_SIG3(i), O=>OUTPUT_PADS(i));\n\
+process(clk)\n\
+begin\n\
+if rising_edge(clk) then\n\
+        OUTPUT_SIG3(i) <= OUTPUT_SIG2(i);\n\
+        OUTPUT_SIG2(i) <= OUTPUT_SIG(i);\n\
+    end if;\n\
+ end process;\n\
 end generate;\n\
 \n\
 ",
