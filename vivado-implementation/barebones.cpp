@@ -212,20 +212,20 @@ begin \n\
 	      extraInCnt-1,inputCnt*bitSize-1,extraOutCnt-1,outputCnt*bitSize-1);
 
 
-if((extraInCnt*bitSize)%64>0){
+if((extraInCnt)%64>0){
 fprintf(fp,"EXTRA_INPUT_SIG(%d downto %d) <= MOD_EXTRA_INPUT_SIG(%d downto 0);\n\
 ",
-	extraInCnt*bitSize-1,extraInCnt*bitSize-(extraInCnt*bitSize)%64-1,(extraInCnt*bitSize)%64-1);
+	extraInCnt-1,extraInCnt-(extraInCnt)%64-1,(extraInCnt)%64-1);
 } 
 if((inputCnt*bitSize)%64>0){
 fprintf(fp,"INPUT_SIG(%d downto %d) <= MOD_INPUT_SIG(%d downto 0);\n\
 ",
 	inputCnt*bitSize-1,inputCnt*bitSize-(inputCnt*bitSize)%64-1,(inputCnt*bitSize)%64-1);
 } 
-if((extraOutCnt*bitSize)%64>0){
+if((extraOutCnt)%64>0){
 fprintf(fp,"EXTRA_OUTPUT_SIG(%d downto %d) <= MOD_EXTRA_OUTPUT_SIG(%d downto 0);\n\
 ",
-	extraOutCnt*bitSize-1,extraOutCnt*bitSize-(extraOutCnt*bitSize)%64-1,(extraOutCnt*bitSize)%64-1);
+	extraOutCnt-1,extraOutCnt-(extraOutCnt)%64-1,(extraOutCnt)%64-1);
 } 
 if((outputCnt*bitSize)%64>0){
 fprintf(fp,"OUTPUT_SIG(%d downto %d) <= MOD_OUTPUT_SIG(%d downto 0);\n\
@@ -278,12 +278,12 @@ my_blk_mem_extra_input_gen : blk_mem_gen\n\
 end generate;\n\
 \n\
 ",
-	int(extraInCnt*bitSize/64)//max i in loop
+	int(extraInCnt/64)//max i in loop
 );
 
 //if one more
 //if(float(inputCnt*bitSize)/64.0 > float(inputCnt*bitSize/64)){
-if( (extraInCnt*bitSize)%64 ){
+if( (extraInCnt)%64 ){
 fprintf(fp,"my_blk_mem_extra_input_mod : blk_mem_gen\n\
    PORT MAP(\n\
       clka => clk,\n\
@@ -394,12 +394,12 @@ my_blk_mem_extra_out_gen : blk_mem_gen\n\
 end generate;\n\
 \n\
 ",
-	int(extraOutCnt*bitSize/64)//max i in loop
+	int(extraOutCnt/64)//max i in loop
 );
 
 //if one more
 //if(float(inputCnt*bitSize)/64.0 > float(inputCnt*bitSize/64)){
-if( (extraOutCnt*bitSize)%64 ){
+if( (extraOutCnt)%64 ){
 fprintf(fp,"my_blk_mem_extra_out_mod : blk_mem_gen\n\
    PORT MAP(\n\
       clka => clk,\n\
