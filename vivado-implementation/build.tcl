@@ -46,6 +46,7 @@ if {[string equal [get_filesets -quiet sources_1] ""]} {
 set obj [get_filesets sources_1]
 set files [list \
  "[file normalize "$origin_dir/hdl/top.vhd"]"\
+ "[file normalize "brams/xcku115-flvb2104-2-i/blk_mem_gen_0.xci"]"\
 ]
 add_files -norecurse -fileset $obj $files
 
@@ -75,11 +76,11 @@ set obj [get_filesets constrs_1]
 
 puts "INFO: Project created:top"
 
-update_compile_order -fileset sources_1
-launch_runs synth_1 -jobs 4
-wait_on_run synth_1
+#update_compile_order -fileset sources_1
+#launch_runs synth_1 -jobs 4
+#wait_on_run synth_1
 
-launch_runs impl_1 
-wait_on_run impl_1
+#launch_runs impl_1 
+#wait_on_run impl_1
 
-puts "INFO: Project implementation done:top"
+#puts "INFO: Project implementation done:top"
