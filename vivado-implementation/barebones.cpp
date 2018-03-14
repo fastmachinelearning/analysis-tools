@@ -194,7 +194,8 @@ COMPONENT blk_mem_gen\n\
 END COMPONENT;\n\
 \n\
 \n\
-signal clk : std_logic;\n\                                                                                                                signal EXTRA_INPUT_SIG : std_logic_vector(%d downto 0);\n\
+signal clk : std_logic := '0';\n\
+signal EXTRA_INPUT_SIG : std_logic_vector(%d downto 0);\n\
 signal MOD_EXTRA_INPUT_SIG : std_logic_vector(63 downto 0);\n\
 signal INPUT_SIG : std_logic_vector(%d downto 0);\n\
 signal MOD_INPUT_SIG : std_logic_vector(63 downto 0);\n\
@@ -350,7 +351,7 @@ my_blk_mem_out_ben : blk_mem_gen\n\
       clkb => clk,\n\
       enb => '1',\n\
       addrb => x\"00000000\",\n\
-      doutb => open,\n\
+      doutb => open\n\
    );\n\
 end generate;\n\
 \n\
@@ -388,7 +389,7 @@ my_blk_mem_extra_out_gen : blk_mem_gen\n\
       clkb => clk,\n\
       enb => '1',\n\
       addrb => x\"00000000\",\n\
-      doutb => open,\n\
+      doutb => open\n\
    );\n\
 end generate;\n\
 \n\
