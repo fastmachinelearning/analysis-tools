@@ -1,3 +1,5 @@
+# Note this bram branch currently only works with xcku115-flvb2104-2-i
+
 # Overview
 
 To run this code script:
