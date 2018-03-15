@@ -215,22 +215,22 @@ begin \n\
 if((extraInCnt)%64>0){
 fprintf(fp,"EXTRA_INPUT_SIG(%d downto %d) <= MOD_EXTRA_INPUT_SIG(%d downto 0);\n\
 ",
-	extraInCnt-1,extraInCnt-(extraInCnt)%64-1,(extraInCnt)%64-1);
+	extraInCnt-1,extraInCnt-(extraInCnt)%64,(extraInCnt)%64-1);
 } 
 if((inputCnt*bitSize)%64>0){
 fprintf(fp,"INPUT_SIG(%d downto %d) <= MOD_INPUT_SIG(%d downto 0);\n\
 ",
-	inputCnt*bitSize-1,inputCnt*bitSize-(inputCnt*bitSize)%64-1,(inputCnt*bitSize)%64-1);
+	inputCnt*bitSize-1,inputCnt*bitSize-(inputCnt*bitSize)%64,(inputCnt*bitSize)%64-1);
 } 
 if((extraOutCnt)%64>0){
 fprintf(fp,"EXTRA_OUTPUT_SIG(%d downto %d) <= MOD_EXTRA_OUTPUT_SIG(%d downto 0);\n\
 ",
-	extraOutCnt-1,extraOutCnt-(extraOutCnt)%64-1,(extraOutCnt)%64-1);
+	extraOutCnt-1,extraOutCnt-(extraOutCnt)%64,(extraOutCnt)%64-1);
 } 
 if((outputCnt*bitSize)%64>0){
 fprintf(fp,"OUTPUT_SIG(%d downto %d) <= MOD_OUTPUT_SIG(%d downto 0);\n\
 ",
-	outputCnt*bitSize-1,outputCnt*bitSize-(outputCnt*bitSize)%64-1,(outputCnt*bitSize)%64-1);
+	outputCnt*bitSize-1,outputCnt*bitSize-(outputCnt*bitSize)%64,(outputCnt*bitSize)%64-1);
 } 
 
       
@@ -256,11 +256,11 @@ res_V => OUTPUT_SIG(%d downto 0) \n\
 --end algo \n\
 \n\
 ",
-	  extraInCnt-1,inputCnt*bitSize-1,extraOutCnt-1,outputCnt*bitSize-1,
 	  inputCnt*bitSize-1, outputCnt*bitSize-1
 	  );
   
 //Wire up BRAMs
+if(extraInCnt>=64){
 fprintf(fp,"extraInGen : for i in 0 to %d generate\n\
 begin\n\
 my_blk_mem_extra_input_gen : blk_mem_gen\n\
@@ -268,18 +268,19 @@ my_blk_mem_extra_input_gen : blk_mem_gen\n\
       clka => clk,\n\
       ena => '1',\n\
       wea => \"0\",\n\
-      addra => x\"00000000\",\n\
-      dina => x\"000000\",\n\
+      addra => \"000000000\",\n\
+      dina => x\"0000000000000000\",\n\
       clkb => clk,\n\
       enb => '1',\n\
-      addrb => x\"00000000\",\n\
+      addrb => \"000000000\",\n\
       doutb => EXTRA_INPUT_SIG((i+1)*64-1 downto i*64)\n\
    );\n\
 end generate;\n\
 \n\
 ",
-	int(extraInCnt/64)//max i in loop
+	int(extraInCnt/64-1)//max i in loop
 );
+}
 
 //if one more
 //if(float(inputCnt*bitSize)/64.0 > float(inputCnt*bitSize/64)){
@@ -289,17 +290,18 @@ fprintf(fp,"my_blk_mem_extra_input_mod : blk_mem_gen\n\
       clka => clk,\n\
       ena => '1',\n\
       wea => \"0\",\n\
-      addra => x\"00000000\",\n\
-      dina => x\"000000\",\n\
+      addra => \"000000000\",\n\
+      dina => x\"0000000000000000\",\n\
       clkb => clk,\n\
       enb => '1',\n\
-      addrb => x\"00000000\",\n\
+      addrb => \"000000000\",\n\
       doutb => MOD_EXTRA_INPUT_SIG(63 downto 0)\n\
    );\n\
 \n\
 ");
 }
 
+if(inputCnt*bitSize>=64){
 fprintf(fp,"inGen : for i in 0 to %d generate\n\
 begin\n\
 my_blk_mem_input_gen : blk_mem_gen\n\
@@ -307,18 +309,19 @@ my_blk_mem_input_gen : blk_mem_gen\n\
       clka => clk,\n\
       ena => '1',\n\
       wea => \"0\",\n\
-      addra => x\"00000000\",\n\
-      dina => x\"000000\",\n\
+      addra => \"000000000\",\n\
+      dina => x\"0000000000000000\",\n\
       clkb => clk,\n\
       enb => '1',\n\
-      addrb => x\"00000000\",\n\
+      addrb => \"000000000\",\n\
       doutb => INPUT_SIG((i+1)*64-1 downto i*64)\n\
    );\n\
 end generate;\n\
 \n\
 ",
-	int(inputCnt*bitSize/64)//max i in loop
+	int(inputCnt*bitSize/64-1)//max i in loop
 );
+}
 
 //if one more
 //if(float(inputCnt*bitSize)/64.0 > float(inputCnt*bitSize/64)){
@@ -328,17 +331,18 @@ fprintf(fp,"my_blk_mem_input_mod : blk_mem_gen\n\
       clka => clk,\n\
       ena => '1',\n\
       wea => \"0\",\n\
-      addra => x\"00000000\",\n\
-      dina => x\"000000\",\n\
+      addra => \"000000000\",\n\
+      dina => x\"0000000000000000\",\n\
       clkb => clk,\n\
       enb => '1',\n\
-      addrb => x\"00000000\",\n\
+      addrb => \"000000000\",\n\
       doutb => MOD_INPUT_SIG(63 downto 0)\n\
    );\n\
 \n\
 ");
 }
 
+if(outputCnt*bitSize>=64){
 fprintf(fp,"outGen : for i in 0 to %d generate\n\
 begin\n\
 my_blk_mem_out_ben : blk_mem_gen\n\
@@ -346,18 +350,19 @@ my_blk_mem_out_ben : blk_mem_gen\n\
       clka => clk,\n\
       ena => '1',\n\
       wea => \"1\",\n\
-      addra => x\"00000000\",\n\
+      addra => \"000000000\",\n\
       dina => OUTPUT_SIG((i+1)*64-1 downto i*64),\n\
       clkb => clk,\n\
       enb => '1',\n\
-      addrb => x\"00000000\",\n\
+      addrb => \"000000000\",\n\
       doutb => open\n\
    );\n\
 end generate;\n\
 \n\
 ",
-	int(outputCnt*bitSize/64)//max i in loop
+	int(outputCnt*bitSize/64-1)//max i in loop
 );
+}
 
 //if one more
 //if(float(inputCnt*bitSize)/64.0 > float(inputCnt*bitSize/64)){
@@ -367,16 +372,18 @@ fprintf(fp,"my_blk_mem_out_mod : blk_mem_gen\n\
       clka => clk,\n\
       ena => '1',\n\
       wea => \"1\",\n\
-      addra => x\"00000000\",\n\
+      addra => \"000000000\",\n\
       dina => MOD_OUTPUT_SIG(63 downto 0),\n\
       clkb => clk,\n\
       enb => '1',\n\
-      addrb => x\"00000000\",\n\
+      addrb => \"000000000\",\n\
       doutb => open\n\
    );\n\
 \n\
 ");
 }
+
+if(extraOutCnt>=64){
 fprintf(fp,"extraOutGen : for i in 0 to %d generate\n\
 begin\n\
 my_blk_mem_extra_out_gen : blk_mem_gen\n\
@@ -384,18 +391,19 @@ my_blk_mem_extra_out_gen : blk_mem_gen\n\
       clka => clk,\n\
       ena => '1',\n\
       wea => \"1\",\n\
-      addra => x\"00000000\",\n\
+      addra => \"000000000\",\n\
       dina => EXTRA_OUTPUT_SIG((i+1)*64-1 downto i*64),\n\
       clkb => clk,\n\
       enb => '1',\n\
-      addrb => x\"00000000\",\n\
+      addrb => \"000000000\",\n\
       doutb => open\n\
    );\n\
 end generate;\n\
 \n\
 ",
-	int(extraOutCnt/64)//max i in loop
+	int(extraOutCnt/64-1)//max i in loop
 );
+}
 
 //if one more
 //if(float(inputCnt*bitSize)/64.0 > float(inputCnt*bitSize/64)){
@@ -405,11 +413,11 @@ fprintf(fp,"my_blk_mem_extra_out_mod : blk_mem_gen\n\
       clka => clk,\n\
       ena => '1',\n\
       wea => \"1\",\n\
-      addra => x\"00000000\",\n\
+      addra => \"000000000\",\n\
       dina => MOD_EXTRA_OUTPUT_SIG(63 downto 0),\n\
       clkb => clk,\n\
       enb => '1',\n\
-      addrb => x\"00000000\",\n\
+      addrb => \"000000000\",\n\
       doutb => open\n\
    );\n\
 \n\
