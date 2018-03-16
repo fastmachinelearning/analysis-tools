@@ -179,7 +179,7 @@ end top;\n\
 architecture BEHAVIORAL of top is\n\
 \n\
 \n\
-COMPONENT blk_mem_gen\n\
+COMPONENT blk_mem_gen_0\n\
    PORT (\n\
       clka : IN STD_LOGIC;\n\
       ena : IN STD_LOGIC;\n\
@@ -263,7 +263,7 @@ res_V => OUTPUT_SIG(%d downto 0) \n\
 if(extraInCnt>=64){
 fprintf(fp,"extraInGen : for i in 0 to %d generate\n\
 begin\n\
-my_blk_mem_extra_input_gen : blk_mem_gen\n\
+my_blk_mem_extra_input_gen : blk_mem_gen_0\n\
    PORT MAP(\n\
       clka => clk,\n\
       ena => '1',\n\
@@ -285,7 +285,7 @@ end generate;\n\
 //if one more
 //if(float(inputCnt*bitSize)/64.0 > float(inputCnt*bitSize/64)){
 if( (extraInCnt)%64 ){
-fprintf(fp,"my_blk_mem_extra_input_mod : blk_mem_gen\n\
+fprintf(fp,"my_blk_mem_extra_input_mod : blk_mem_gen_0\n\
    PORT MAP(\n\
       clka => clk,\n\
       ena => '1',\n\
@@ -304,7 +304,7 @@ fprintf(fp,"my_blk_mem_extra_input_mod : blk_mem_gen\n\
 if(inputCnt*bitSize>=64){
 fprintf(fp,"inGen : for i in 0 to %d generate\n\
 begin\n\
-my_blk_mem_input_gen : blk_mem_gen\n\
+my_blk_mem_input_gen : blk_mem_gen_0\n\
    PORT MAP(\n\
       clka => clk,\n\
       ena => '1',\n\
@@ -326,7 +326,7 @@ end generate;\n\
 //if one more
 //if(float(inputCnt*bitSize)/64.0 > float(inputCnt*bitSize/64)){
 if( (inputCnt*bitSize)%64 ){
-fprintf(fp,"my_blk_mem_input_mod : blk_mem_gen\n\
+fprintf(fp,"my_blk_mem_input_mod : blk_mem_gen_0\n\
    PORT MAP(\n\
       clka => clk,\n\
       ena => '1',\n\
@@ -345,7 +345,7 @@ fprintf(fp,"my_blk_mem_input_mod : blk_mem_gen\n\
 if(outputCnt*bitSize>=64){
 fprintf(fp,"outGen : for i in 0 to %d generate\n\
 begin\n\
-my_blk_mem_out_ben : blk_mem_gen\n\
+my_blk_mem_out_ben : blk_mem_gen_0\n\
    PORT MAP(\n\
       clka => clk,\n\
       ena => '1',\n\
@@ -367,7 +367,7 @@ end generate;\n\
 //if one more
 //if(float(inputCnt*bitSize)/64.0 > float(inputCnt*bitSize/64)){
 if( (outputCnt*bitSize)%64 ){
-fprintf(fp,"my_blk_mem_out_mod : blk_mem_gen\n\
+fprintf(fp,"my_blk_mem_out_mod : blk_mem_gen_0\n\
    PORT MAP(\n\
       clka => clk,\n\
       ena => '1',\n\
@@ -386,7 +386,7 @@ fprintf(fp,"my_blk_mem_out_mod : blk_mem_gen\n\
 if(extraOutCnt>=64){
 fprintf(fp,"extraOutGen : for i in 0 to %d generate\n\
 begin\n\
-my_blk_mem_extra_out_gen : blk_mem_gen\n\
+my_blk_mem_extra_out_gen : blk_mem_gen_0\n\
    PORT MAP(\n\
       clka => clk,\n\
       ena => '1',\n\
@@ -408,7 +408,7 @@ end generate;\n\
 //if one more
 //if(float(inputCnt*bitSize)/64.0 > float(inputCnt*bitSize/64)){
 if( (extraOutCnt)%64 ){
-fprintf(fp,"my_blk_mem_extra_out_mod : blk_mem_gen\n\
+fprintf(fp,"my_blk_mem_extra_out_mod : blk_mem_gen_0\n\
    PORT MAP(\n\
       clka => clk,\n\
       ena => '1',\n\
