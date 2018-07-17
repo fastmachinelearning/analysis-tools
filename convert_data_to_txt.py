@@ -20,7 +20,7 @@ import yaml
 ## Config module
 def parse_config(config_file) :
 
-    print "Loading configuration from " + str(config_file)
+    #print "Loading configuration from " + str(config_file)
     config = open(config_file, 'r')
     return yaml.load(config)
 
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     yamlConfig = parse_config(options.config)
 
     if os.path.isdir(options.outputDir):
-        print "Directory exist: do not create"
+        print("Directory exist: do not create")
     else:
         os.mkdir(options.outputDir)
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     
     print(x_image_train.shape)
 
-    print 'END PROCESSING'
+    print('END PROCESSING')
 
     # Convert to numpy array with correct shape
     #features_val = features_df.values
@@ -125,12 +125,12 @@ if __name__ == "__main__":
              
     modelName = options.inputModel.split('/')[-1].replace('.h5','')
     
-    print options.inputModel
+    #print options.inputModel
     model = load_model(options.inputModel)
-    print 'LOADED MODEL***********************************'
+    print('LOADED MODEL***********************************')
     predict_test = model.predict(x_image_test)
 
-    print "Writing",y_test.shape[1],"predicted labels for",y_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_truth_labels.dat')  
+    #print "Writing",y_test.shape[1],"predicted labels for",y_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_truth_labels.dat')  
     outf_labels = open(options.outputDir+'/'+modelName+'_truth_labels.dat','w')
     for e in range(y_test.shape[0]):
      line=''
@@ -139,7 +139,7 @@ if __name__ == "__main__":
      outf_labels.write(line+'\n')
     outf_labels.close() 
         
-    print "Writing",X_test.shape[1],"features for",X_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_input_features.dat')
+    #print "Writing",X_test.shape[1],"features for",X_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_input_features.dat')
     outf_features = open(options.outputDir+'/'+modelName+'_input_features.dat','w')
     for e in range(X_test.shape[0]):
      line=''
@@ -148,7 +148,7 @@ if __name__ == "__main__":
      outf_features.write(line+'\n')    
     outf_features.close()  
      
-    print "Writing",predict_test.shape[1],"predicted labels for",predict_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_predictions.dat')  
+    #print "Writing",predict_test.shape[1],"predicted labels for",predict_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_predictions.dat')  
     outf_predict = open(options.outputDir+'/'+modelName+'_predictions.dat','w')
     for e in range(predict_test.shape[0]):
      line=''
