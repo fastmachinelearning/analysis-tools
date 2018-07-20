@@ -33,7 +33,7 @@ if __name__ == "__main__":
     parser.add_option('-c','--config'   ,action='store',type='string', dest='config', default='train_config_threelayer.yml', help='configuration file')
     (options,args) = parser.parse_args()
      
-    yamlConfig = parse_config(options.config)
+    #yamlConfig = parse_config(options.config)
 
     if os.path.isdir(options.outputDir):
         print("Directory exist: do not create")
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     print('LOADED MODEL***********************************')
     predict_test = model.predict(x_image_test)
 
-    #print "Writing",y_test.shape[1],"predicted labels for",y_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_truth_labels.dat')  
+    print("Writing",y_test.shape[1],"predicted labels for",y_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_truth_labels.dat'))  
     outf_labels = open(options.outputDir+'/'+modelName+'_truth_labels.dat','w')
     for e in range(y_test.shape[0]):
      line=''
@@ -139,16 +139,20 @@ if __name__ == "__main__":
      outf_labels.write(line+'\n')
     outf_labels.close() 
         
-    #print "Writing",X_test.shape[1],"features for",X_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_input_features.dat')
+    print("x_image_test shape",x_image_test.shape)
+    print("Writing",x_image_test.shape[1],"x",x_image_test.shape[2],"x",x_image_test.shape[3],"features for",x_image_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_input_features.dat'))
     outf_features = open(options.outputDir+'/'+modelName+'_input_features.dat','w')
-    for e in range(X_test.shape[0]):
-     line=''
-     for f in range(len(X_test[e])):
-      line+=(str(X_test[e][f])+' ')
-     outf_features.write(line+'\n')    
+    #for e in range(x_image_test.shape[0]):
+    for e in range(0,100):
+        line=''
+        for r in range(0,x_image_test.shape[1]):
+            for c in range(0,x_image_test.shape[2]):
+                for ch in range(0,x_image_test.shape[3]):
+                    line+=(str(x_image_test[e][r][c][ch])+' ')
+        outf_features.write(line+'\n')    
     outf_features.close()  
      
-    #print "Writing",predict_test.shape[1],"predicted labels for",predict_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_predictions.dat')  
+    print("Writing",predict_test.shape[1],"predicted labels for",predict_test.shape[0],"events in outfile",(options.outputDir+'/'+modelName+'_predictions.dat'))
     outf_predict = open(options.outputDir+'/'+modelName+'_predictions.dat','w')
     for e in range(predict_test.shape[0]):
      line=''
