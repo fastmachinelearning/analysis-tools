@@ -32,43 +32,47 @@
 int main(int argc, char **argv)
 {
 
-  //load input data from text file
-  std::ifstream fin("tb_input_data.dat");
+    //load input data from text file
+    std::ifstream fin("tb_input_data.dat");
 
-  std::string line;
-  int e = 0;
-  if (fin.is_open())
-  {
-	std::ofstream outfile;
-	outfile.open("tb_output_data.dat");
-	while ( std::getline (fin,line) )
+    std::string line;
+    int e = 0;
+    if (! fin.is_open())
     {
-	  if( e%5000==0 ) std::cout << "Processing event " << e << std::endl;
-	  e++;
-      char* cstr=const_cast<char*>(line.c_str());
-      char* current;
-      std::vector<float> arr;
-      current=strtok(cstr," ");
-      while(current!=NULL){
-          arr.push_back(atof(current));
-          current=strtok(NULL," ");
-      }
+        std::cout << "Unable to open file" << std::endl;
+        return 1;
+    }
 
-      input_t  data_str[N_INPUTS] = {arr[0],arr[1],arr[2],arr[3],arr[4],arr[5],arr[6],arr[7],arr[8],arr[9],arr[10],arr[11],arr[12],arr[13],arr[14],arr[15]};
-      result_t res_str[N_OUTPUTS] = {0};
-      unsigned short size_in, size_out;
-      myproject(data_str, res_str, size_in, size_out);
+    std::ofstream outfile;
+    outfile.open("tb_output_data.dat");
+    while ( std::getline (fin,line) )
+    {
+        if( e%5000==0 ) std::cout << "Processing event " << e << std::endl;
+        e++;
+        char* cstr=const_cast<char*>(line.c_str());
+        char* current;
+        std::vector<float> arr;
+        current=strtok(cstr," ");
+        while(current!=NULL){
+            arr.push_back(atof(current));
+            current=strtok(NULL," ");
+        }
+        assert(arr.size() == N_INPUTS);
 
-      for(int i=0; i<N_OUTPUTS; i++){
-    	outfile << res_str[i] << " ";
-      }
-      outfile << "\n";
+        input_t  data_str[N_INPUTS] = {0};
+        result_t res_str[N_OUTPUTS] = {0};
+        for(int i=0; i<N_INPUTS; i++)
+          data_str[i] = arr.at(i);
+        unsigned short size_in, size_out;
+        myproject(data_str, res_str, size_in, size_out);
+
+        for(int i=0; i<N_OUTPUTS; i++){
+            outfile << res_str[i] << " ";
+        }
+        outfile << "\n";
     }
     fin.close();
     outfile.close();
-  }
-  else std::cout << "Unable to open file" << std::endl;
 
-  
-  return 0;
+    return 0;
 }
