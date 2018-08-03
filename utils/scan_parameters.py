@@ -124,7 +124,8 @@ def ExtractFromXML(df, key, report_file):
     if not os.path.isfile(report_file):
         print("file: ",report_file,"does not exist! Synthesis failed!")
         for k, v in xmlpath.items():
-            df.at[key, k] = None
+            #df.at[key, k] = None
+            df.at[key, k] = 0 #BEN
         return False
 
     ## Parsing XML file
@@ -278,5 +279,5 @@ if __name__ == "__main__":
     projs = FormVariation(config)
     df = RunProjs(projs, config)
     df.to_csv("output_%s.csv" % config["OutputDir"])
-    prediction.to_pickle("predict_%s.pkl" % config["OutputDir"])
+    prediction.to_pickle("predict_%s.pkl" % config["OutputDir"], compression=None)
 
