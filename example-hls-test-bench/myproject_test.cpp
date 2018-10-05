@@ -57,18 +57,18 @@ int main(int argc, char **argv)
             arr.push_back(atof(current));
             current=strtok(NULL," ");
         }
-        assert(arr.size() == IN_HEIGHT_1*IN_WIDTH_1*N_CHAN_1);
+        assert(arr.size() == IN_HEIGHT_2*IN_WIDTH_2*N_CHAN_2);
 
         //input_t  data_str[N_INPUTS] = {0};
-	input_t    data_str[IN_HEIGHT_1][IN_WIDTH_1][N_CHAN_1] = {0};
+	input_t    data_str[IN_HEIGHT_2][IN_WIDTH_2][N_CHAN_2] = {0};
         result_t res_str[N_OUTPUTS] = {0};
         //for(int i=0; i<IN_HEIGHT_1*IN_WIDTH_1*N_CHAN_1; i++)
         //  data_str[i] = arr.at(i);
 	
-	for(int i1=0; i1<IN_HEIGHT_1; i1++){
-	  for(int i2=0; i2<IN_WIDTH_1; i2++){
-	    for(int i3=0; i3<N_CHAN_1; i3++){
-	      data_str[i1][i2][i3] = arr.at(i1*IN_WIDTH_1*N_CHAN_1+i2*N_CHAN_1+i3);
+	for(int i1=0; i1<IN_HEIGHT_2; i1++){
+	  for(int i2=0; i2<IN_WIDTH_2; i2++){
+	    for(int i3=0; i3<N_CHAN_2; i3++){
+	      data_str[i1][i2][i3] = arr.at(i1*IN_WIDTH_2*N_CHAN_2+i2*N_CHAN_2+i3);
 	      //std::cout << data_str[i1][i2][i3] << " ";
 	    }
 	  }
@@ -78,13 +78,13 @@ int main(int argc, char **argv)
         unsigned short size_in, size_out;
         myproject(data_str, res_str, size_in, size_out);
 	
-	//std::cout << "Network " << e << " output: ";
+	std::cout << "Network " << e << " output: ";
         for(int i=0; i<N_OUTPUTS; i++){
-	  //std::cout << res_str[i] << " ";
+	  std::cout << res_str[i] << " ";
 	  outfile << res_str[i] << " ";
         }
         outfile << "\n";
-	//std::cout << std::endl;
+	std::cout << std::endl;
 	
 
     }

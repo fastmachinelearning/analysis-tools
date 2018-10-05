@@ -1,0 +1,43 @@
+KerasJson: /home/kreis/conv2d_sept24/convert/analysis-tools/fromMaurizio/jetTagger_Conv2D_Small.json
+KerasH5:   /home/kreis/conv2d_sept24/convert/analysis-tools/fromMaurizio/jetTagger_Conv2D_Small.h5
+OutputDir: BenConv2d
+ProjectName: myproject
+IOType: io_parallel
+ClockPeriod: 5
+XilinxPart: 
+  #- xc7vx690tffg1927-2
+  - xcku115-flvf1924-2-i
+
+ReuseFactor: 
+  - 1
+#  - 2
+#  - 3
+#  - 4
+#  - 5
+#  - 6
+
+DefaultPrecision:
+##    4a4: ap_fixed<4,4> 
+#    8a4: ap_fixed<8,4> 
+##    12a4: ap_fixed<12,4> 
+#    16a4: ap_fixed<16,4> 
+##    20a4: ap_fixed<20,4> 
+#    24a4: ap_fixed<24,4> 
+##    28a4: ap_fixed<28,4> 
+#    44a18: ap_fixed<44,18> 
+##    36a4: ap_fixed<36,4> 
+##    40a4: ap_fixed<40,4> 
+#
+    10a8: ap_fixed<10,8> 
+    14a8: ap_fixed<14,8> 
+    18a8: ap_fixed<18,8> 
+    22a8: ap_fixed<22,8> 
+    26a10: ap_fixed<26,10> 
+    30a12: ap_fixed<30,12> 
+#    34a8: ap_fixed<34,8> 
+#    44a18: ap_fixed<44,18> 
+
+ScanHLS4MLDir: ../../
+ScanInputData: /home/kreis/conv2d_sept24/convert/analysis-tools/data_to_txt/jetTagger_Conv2D_Small_input_features.dat
+ScanPrediction: /home/kreis/conv2d_sept24/convert/analysis-tools/data_to_txt/jetTagger_Conv2D_Small_predictions.dat
+ScanTruth: /home/kreis/conv2d_sept24/convert/analysis-tools/data_to_txt/jetTagger_Conv2D_Small_truth_labels.dat
