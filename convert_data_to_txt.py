@@ -2,6 +2,7 @@ import sys
 import os
 from optparse import OptionParser
 from keras.models import load_model, Model
+from keras.models import model_from_json
 from argparse import ArgumentParser
 from keras import backend as K
 import numpy as np
@@ -15,8 +16,93 @@ from sklearn import preprocessing
 import pandas as pd
 import yaml
 import math
+import re
+
 # To turn off GPU
 #os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
+
+def print_array_to_cpp(name, a, odir ):
+
+    #count zeros
+    zero_ctr = 0
+    for x in np.nditer(a, order='C'):
+        if x == 0: 
+            zero_ctr += 1
+
+    #put output in subdir for tarballing later
+    f=open("prints/{}.h".format(name),"w")
+
+    #meta data
+    f.write("//Numpy array shape {}\n".format(a.shape))
+    f.write("//Min {}\n".format(np.min(a)))
+    f.write("//Max {}\n".format(np.max(a)))
+    f.write("//Number of zeros {}\n".format(zero_ctr))
+    f.write("\n")
+    
+    #c++ variable 
+    if "w" in name: 
+        f.write("weight_default_t {}".format(name))
+    elif "b" in name: 
+        f.write("bias_default_t {}".format(name))
+    else:
+        raise Exception('ERROR: Unkown weights type')
+
+    #hls doesn't like 3d arrays... unrolling to 1d
+    #also doing for all (including 2d) arrays now
+    f.write("[{}]".format(np.prod(a.shape)))
+    f.write(" = {")
+    
+    #fill c++ array.  
+    #not including internal brackets for multidimensional case
+    i=0
+    for x in np.nditer(a, order='C'):
+        if i==0:
+            f.write("{}".format(x))
+        else:
+            f.write(", {}".format(x))
+        i=i+1
+    f.write("};\n")
+    f.close()
+
+    return zero_ctr
+
+
+# The following two functions from
+# https://confluence.slac.stanford.edu/display/PSDM/How+to+access+HDF5+data+from+Python
+
+def print_hdf5_file_structure(file_name) :
+    """Prints the HDF5 file structure"""
+    file = h5py.File(file_name, 'r') # open read-only
+    item = file #["/Configure:0000/Run:0000"]
+    print_hdf5_item_structure(item)
+    file.close()
+ 
+def print_hdf5_item_structure(g, offset='    ') :
+    """Prints the input file/group/dataset (g) name and begin iterations on its content"""
+    if   isinstance(g,h5py.File) :
+        print(g.file, '(File)', g.name)
+ 
+    elif isinstance(g,h5py.Dataset) :
+        print('(Dataset)', g.name, '    len =', g.shape) #, g.dtype
+ 
+    elif isinstance(g,h5py.Group) :
+        print('(Group)', g.name)
+ 
+    else :
+        print('WORNING: UNKNOWN ITEM IN HDF5 FILE', g.name)
+        sys.exit ( "EXECUTION IS TERMINATED" )
+ 
+    if isinstance(g, h5py.File) or isinstance(g, h5py.Group) :
+        for key,val in dict(g).items() :
+            subg = val
+            print(offset, key)#, #,"   ", subg.name #, val, subg.len(), type(subg),
+            print_hdf5_item_structure(subg, offset + '    ')
+
+
+
+
+
 
 ## Config module
 def parse_config(config_file) :
@@ -46,6 +132,8 @@ if __name__ == "__main__":
     h5File = h5py.File(options.inputFile)
     treeArray = h5File[options.tree][()]
 
+    print_hdf5_file_structure(options.inputFile)
+
     # List of features to use
     # List of features to use
     #features = yamlConfig['Inputs']
@@ -59,7 +147,7 @@ if __name__ == "__main__":
 
     #Copy processing from Maurizio    
     jets = h5File.get('jets')
-    jetImagePt = np.array(h5File.get('jetImagePt'))
+    jetImagePt = np.array(h5File.get('jetImage'))
     print(jets.shape, jetImagePt.shape)
 
     # prepare target
@@ -96,7 +184,7 @@ if __name__ == "__main__":
     minVal = scaler.data_min_
     expFeature = (expFeature-minVal)/(maxVal-minVal)
     # normalize the images dividing by the maximum pT
-    jetImagePt = jetImagePt/maxVal[0]
+    # jetImagePt = jetImagePt/maxVal[0]
 
     iSplit = int(0.7*target.shape[0])
     x_image_train = jetImagePt[:iSplit, :, :]
@@ -127,19 +215,29 @@ if __name__ == "__main__":
              
     modelName = options.inputModel.split('/')[-1].replace('.h5','')
     
-    #print options.inputModel
-    model = load_model(options.inputModel)
-    print('LOADED MODEL***********************************')
+    print('LOAD MODEL')
+    #print(options.inputModel)
+    #f = h5py.File(options.inputModel, 'r')
+    #print("Keys: %s" % f.keys())
+    #print_hdf5_file_structure(options.inputModel)
+    #model = load_model(options.inputModel)
+    #print('LOADED MODEL***********************************')
     
+    #load model with json and h5 instead
+    json_string = open('fromMaurizio/jetTagger_Conv2D_Small.json', 'r').read()
+    model = model_from_json(json_string)
+    model.load_weights('fromMaurizio/jetTagger_Conv2D_Small.h5')
+    print('LOADED MODEL***********************************')
+
     #Export
-    model.save_weights('my_model_weights.h5')
-    outfile = open('model.json','w')
-    jsonString = model.to_json()
-    import json
-    with outfile:
-        obj = json.loads(jsonString)
-        json.dump(obj, outfile, sort_keys=True,indent=4, separators=(',', ': '))
-        outfile.write('\n')
+    #model.save_weights('my_model_weights.h5')
+    #outfile = open('model.json','w')
+    #jsonString = model.to_json()
+    #import json
+    #with outfile:
+    #    obj = json.loads(jsonString)
+    #    json.dump(obj, outfile, sort_keys=True,indent=4, separators=(',', ': '))
+    #    outfile.write('\n')
 
     predict_test = model.predict(x_image_test)
 
@@ -182,34 +280,49 @@ if __name__ == "__main__":
 # inference
 ###############################
 
-x_sample = x_image_test[0,:,:,:]
+h5File = h5py.File('fromMaurizio/jetTagger_Conv2D_Small.h5')
+print_hdf5_file_structure('fromMaurizio/jetTagger_Conv2D_Small.h5')
 
-h5File = h5py.File('my_model_weights.h5')
+x_sample = x_image_test[0,:,:,:]
+print(x_sample)
+print_array_to_cpp("w_x_sample",x_sample,"xxx")
+
+#batch norm
+beta = h5File['/batch_normalization_1/batch_normalization_1/beta:0'][()]
+gamma = h5File['/batch_normalization_1/batch_normalization_1/gamma:0'][()]
+mean = h5File['/batch_normalization_1/batch_normalization_1/moving_mean:0'][()]
+var = h5File['/batch_normalization_1/batch_normalization_1/moving_variance:0'][()]
+scale = gamma/np.sqrt(var)
+x_sample =(x_sample-mean)*scale+beta
+print("OUT BATCH NORM")
+print(x_sample)
+print_array_to_cpp("w_x_sampleBN",x_sample,"xxx")
+
 
 conv_k = h5File['/cnn2D_1_relu/cnn2D_1_relu/kernel:0'][()]
 conv_b = h5File['/cnn2D_1_relu/cnn2D_1_relu/bias:0'][()]
 conv2_k = h5File['/cnn2D_2_relu/cnn2D_2_relu/kernel:0'][()]
 conv2_b = h5File['/cnn2D_2_relu/cnn2D_2_relu/bias:0'][()]
-dense_k = h5File['/dense_1_relu/dense_1_relu/kernel:0'][()]
-dense_b = h5File['/dense_1_relu/dense_1_relu/bias:0'][()]
-dense2_k = h5File['/output_softmax/output_softmax/kernel:0'][()]
-dense2_b = h5File['/output_softmax/output_softmax/bias:0'][()]
+#dense_k = h5File['/dense_1_relu/dense_1_relu/kernel:0'][()]
+#dense_b = h5File['/dense_1_relu/dense_1_relu/bias:0'][()]
+#dense2_k = h5File['/output_softmax/output_softmax/kernel:0'][()]
+#dense2_b = h5File['/output_softmax/output_softmax/bias:0'][()]
 
 
-img_rows, img_cols = 20, 20
+img_rows, img_cols = 25, 25
 input_shape = (img_rows, img_cols, 1)
 
 in_height = input_shape[0];
 in_width  = input_shape[1];
 in_chann  = input_shape[2];
 
-f_height   = 4;
-f_width    = 4;
-f_outchann = 10; #number of filters
+f_height   = 3;
+f_width    = 3;
+f_outchann = 5; #number of filters
 
 stride_width = 3;
 stride_height = 3;
-padding = "valid";
+padding = "same"; #guess at the moment
 
 
 # Derived
@@ -248,12 +361,12 @@ if padding == "same":
     print("in_width, post padding, should be: {}".format(in_width))
     print("in_height, post padding, should be: {}".format(in_height))
 
-    #f1 = open('pre.txt', 'w')
-    #np.savetxt(f1,x_sample)
+#    #f1 = open('pre.txt', 'w')
+#    #np.savetxt(f1,x_sample)
     x_sample = np.pad(x_sample, [(pad_top,pad_bottom),(pad_left,pad_right),(0,0)], 'constant')
     print("x_sample shape: ",x_sample.shape)
-    #f2 = open('post.txt', 'w')
-    #np.savetxt(f2,x_sample)
+#    #f2 = open('post.txt', 'w')
+#    #np.savetxt(f2,x_sample)
 
 
 conv_out = np.zeros((out_height,out_width,n_filters))
@@ -305,12 +418,15 @@ for oh in range(0, out_height):
 
 print("n_mult: ",n_mult)
 print("conv_out shape: ",conv_out.shape)
+print("conv_out: ")
+print(conv_out)
 
-#print_array_to_cpp("w_out",conv_out,"weights")
+print_array_to_cpp("w_out",conv_out,"weights")
 
 #Rest of network
 conv_out = conv_out * (conv_out > 0) #relu                                                                                                  
-
+print("RELU")
+print(conv_out)
 
 ########################
 ## LAYER 2
@@ -319,6 +435,20 @@ conv_out = conv_out * (conv_out > 0) #relu
 
 x_sample = conv_out
 
+
+
+#batch norm 2
+beta = h5File['/batch_normalization_2/batch_normalization_2/beta:0'][()]
+gamma = h5File['/batch_normalization_2/batch_normalization_2/gamma:0'][()]
+mean = h5File['/batch_normalization_2/batch_normalization_2/moving_mean:0'][()]
+var = h5File['/batch_normalization_2/batch_normalization_2/moving_variance:0'][()]
+scale = gamma/np.sqrt(var)
+print("******* x_sample.shape ",x_sample.shape)
+#x_sample[0,:] =(x_sample[0,:]-mean[0])*scale[0]+beta[0]
+x_sample =(x_sample-mean)*scale+beta
+print("OUT BATCH NORM")
+print(x_sample)
+print_array_to_cpp("w_x_sampleBN2",x_sample,"xxx")
 
 in_height = conv_out.shape[0];
 in_width  = conv_out.shape[1];
@@ -329,20 +459,20 @@ print("in_height: ",in_height)
 print("in_width: ",in_width)
 print("in_chann: ",in_chann)
 
-f_height   = 3;
-f_width    = 3;
-f_outchann = 8; #number of filters
+f_height   = 5;
+f_width    = 5;
+f_outchann = 2; #number of filters
 
 stride_width = 2;
 stride_height = 2;
-padding = "valid";
+padding = "same";
 
 
-# Derived
+# # Derived
 f_inchann  = in_chann;  #number of input channels
 n_filters  = f_outchann;
 
-# Padding
+# # Padding
 if (in_width % stride_width == 0):
     pad_along_width = max(f_width - stride_width, 0)
 else:
@@ -370,16 +500,16 @@ if padding == "same":
     out_height  = int(math.ceil(float(in_height) / float(stride_height)))
     in_width = in_width + pad_left + pad_right
     in_height = in_height + pad_top + pad_bottom
-
+    
     print("in_width, post padding, should be: {}".format(in_width))
     print("in_height, post padding, should be: {}".format(in_height))
-
-    #f1 = open('pre.txt', 'w')
-    #np.savetxt(f1,x_sample)
+    
+#     #f1 = open('pre.txt', 'w')
+#     #np.savetxt(f1,x_sample)
     x_sample = np.pad(x_sample, [(pad_top,pad_bottom),(pad_left,pad_right),(0,0)], 'constant')
-    print("x_sample shape: ",x_sample.shape)
-    #f2 = open('post.txt', 'w')
-    #np.savetxt(f2,x_sample)
+#     print("x_sample shape: ",x_sample.shape)
+#     #f2 = open('post.txt', 'w')
+#     #np.savetxt(f2,x_sample)
 
 
 conv_out = np.zeros((out_height,out_width,n_filters))
@@ -400,7 +530,7 @@ for oh in range(0, out_height):
 
                 #get filter
                 my_filter = conv2_k[:,:,c,f]
-
+                
                 #select data
                 x_buffer = x_sample[:,:,c]
                 x_buffer = x_buffer[oh*stride_height:oh*stride_height+f_height,ow*stride_width:ow*stride_width+f_width]
@@ -432,23 +562,23 @@ for oh in range(0, out_height):
 print("n_mult: ",n_mult)
 print("conv_out shape: ",conv_out.shape)
 
-#print_array_to_cpp("w_out",conv_out,"weights")
+print_array_to_cpp("w_out2",conv_out,"weights")
 
-#Rest of network
-conv_out = conv_out * (conv_out > 0) #relu                                                                                                  
-
-
-###################
-
-conv_out = conv_out.flatten()
-dnn_out = np.dot(conv_out, dense_k)+dense_b
-dnn_out = dnn_out * (dnn_out > 0) #relu                                                                                                  
+# #Rest of network
+# conv_out = conv_out * (conv_out > 0) #relu                                                                                                  
 
 
-dnn2_out = np.dot(dnn_out, dense2_k)+dense2_b
-dnn2_out = np.exp(dnn2_out) / sum(np.exp(dnn2_out)) #softmax
+# ###################
 
-print("Network output: ",dnn2_out)
+# conv_out = conv_out.flatten()
+# dnn_out = np.dot(conv_out, dense_k)+dense_b
+# dnn_out = dnn_out * (dnn_out > 0) #relu                                                                                                  
+
+
+# dnn2_out = np.dot(dnn_out, dense2_k)+dense2_b
+# dnn2_out = np.exp(dnn2_out) / sum(np.exp(dnn2_out)) #softmax
+
+# print("Network output: ",dnn2_out)
 
 
 ######################3
